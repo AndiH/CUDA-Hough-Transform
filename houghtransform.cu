@@ -12,7 +12,7 @@
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/sequence.h>
 
-#include "/cuPrintf.cu"
+#include "cuPrintf.cu"
 
 struct confMap {
 	__device__ thrust::tuple<double, double> operator() (thrust::tuple<double, double> &data) {

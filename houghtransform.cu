@@ -162,5 +162,16 @@ int main (int argc, char** argv) {
 	 * 	find max
 	 * 	create fine grid
 	 * 	find peaks
+	
+	
+	LINKS FOR MATRIX STUFF:
+	
+	https://www.google.com/search?q=thrust+matrix
+	https://www.google.com/search?q=thrust+matrix+multiplication&sugexp=chrome,mod=10&sourceid=chrome&ie=UTF-8
+	http://stackoverflow.com/questions/618511/a-proper-way-to-create-a-matrix-in-c
+	http://www.velocityreviews.com/forums/t281152-is-there-any-matrix-in-the-stl.html
+	BLAS
+	Blitz++
+	
 	 */
 }

@@ -14,13 +14,16 @@
 
 #include "cuPrintf.cu"
 
+// Struct which delivers a operator to be used in a transform call
+// INPUT: a tuple of doubles to be conformal mapped
+// OUTPUT: a tuple of doubles which have been conformal mapped
 struct confMap {
 	__device__ thrust::tuple<double, double> operator() (thrust::tuple<double, double> &data) {
 		double x = thrust::get<0>(data);
 		double y = thrust::get<1>(data);
 		
 		double x2y2 = x*x+y*y;
-// 		printf("x2y2 = %f\n", x2y2);
+// 		printf("x2y2 = %f\n", x2y2); // ### DEBUG
 		
 		return thrust::make_tuple(x/x2y2, -y/x2y2);
 	}
@@ -36,10 +39,18 @@ struct confMap {
 // 	}
 // };
 
+// Function which actuall does the hough transformation
+// Has been outsourced to be able to change between different hough transformations
+// INPUT: double x, double y, angle double alpha
+// OUTPUT: double corresponding to a certain alpha
 __device__ double houghTransfFunction(double alpha, double x, double y) {
 	return (cos(alpha) * x + sin(alpha) * y);
 }
 
+
+// Struct which delivers an operator which hough transforms its INPUTS due to an exchangeable function
+// INPUT: a tuple of an angle and an tuple of x and y
+// OUTPUT: a hough transformed point corresponding to a certain angle
 struct transf {
 	__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double> > data) {
 		double alpha = thrust::get<0>(data);
@@ -53,6 +64,9 @@ struct transf {
 	}
 };
 
+// Helper function which simply prints out the contents of a tuple
+// INPUT: tuple of doubles
+// OUTPUT: NOTHING (void)
 void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }

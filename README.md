@@ -1,4 +1,6 @@
-CUDA
+Hough in Thrust
 ====
 
-My works in CUDA
+My spare time project. 
+
+A Hough transform in **CUDA Thrust**. With **conformal mapping**.

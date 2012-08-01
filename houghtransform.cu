@@ -14,9 +14,36 @@
 
 #include "cuPrintf.cu"
 
-// Struct which delivers a operator to be used in a transform call
-// INPUT: a tuple of doubles to be conformal mapped
-// OUTPUT: a tuple of doubles which have been conformal mapped
+#include "TH2D.h"
+#include "TROOT.h"
+#include "TApplication.h"
+#include "TCanvas.h"
+
+/**
+ * @mainpage Conformal Mapping and Hough Transformation in CUDA Thrust
+ * 
+ * <h1>HoughTrust</h1>
+ * <h2>A toy project during my PhD time</h2>
+ * 
+ * Using CUDA Thrust to conformal map and hough transform points of a tracker. Two dimensionally.
+ * 
+ * @author Andreas Herten
+ */
+
+/**
+ * @file houghtransform.cu
+ * 
+ * @brief Everything is in that one file
+ * 
+ * Sorry for that, but if/when I'm going to need any special functions, I will extract them
+ **/
+
+/**
+ * @brief Struct for an operator to be used in a conf mapping transform call
+ * 
+ * @param data A tuple of doubles to be conformal mapped
+ * @return A tuple of doubles which have been conformal mapped
+ */
 struct confMap {
 	__device__ thrust::tuple<double, double> operator() (thrust::tuple<double, double> &data) {
 		double x = thrust::get<0>(data);
@@ -39,23 +66,31 @@ struct confMap {
 // 	}
 // };
 
-// Function which actuall does the hough transformation
-// Has been outsourced to be able to change between different hough transformations
-// INPUT: double x, double y, angle double alpha
-// OUTPUT: double corresponding to a certain alpha
+/**
+ * @brief (Outsourced) Function which actually does the hough transformation
+ * @param alpha Angle to be hough transformed with, in degrees
+ * @param x,y Coordinates of the to be transformed point
+ * @return The hough transformed point corresponding to a certain angle (as a double)
+ * 
+ * This actual hough transforming method has been outsourced in order to call different hough transform functions from the operator mother function
+ */
 __device__ double houghTransfFunction(double alpha, double x, double y) {
-	return (cos(alpha) * x + sin(alpha) * y);
+	return (cos(alpha*1.74532925199432955e-02) * x + sin(alpha*1.74532925199432955e-02) * y);
 }
 
-
-// Struct which delivers an operator which hough transforms its INPUTS due to an exchangeable function
-// INPUT: a tuple of an angle and an tuple of x and y
-// OUTPUT: a hough transformed point corresponding to a certain angle
+/**
+ * @brief Struct for an operator which hough transforms its input due to an exchangeable hough transforming method
+ * @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
+ * @return A hough transformed point corresponding to a certain angle
+ * 
+ * This method only runs on the device
+ */
 struct transf {
 	__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double> > data) {
 		double alpha = thrust::get<0>(data);
 		thrust::tuple<double, double> xy = thrust::get<1>(data);
-		double x = thrust::get<0>(xy);
+		double x = thrust::get<0>(xy);	
+
 		double y = thrust::get<1>(xy);
 		
 		printf("alpha * x + alpha * y = %f * %f + %f * %f\n", alpha, x, alpha, y);
@@ -64,9 +99,11 @@ struct transf {
 	}
 };
 
-// Helper function which simply prints out the contents of a tuple
-// INPUT: tuple of doubles
-// OUTPUT: NOTHING (void)
+/**
+ * @brief Helper function which simply prints out the contents of a tuple
+ * @param thatTuple A tuple of doubles to be printed
+ * @return Nothing, it's a void.
+ */
 void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }
@@ -74,7 +111,7 @@ void printTuple (thrust::tuple<double, double> thatTuple) {
 int main (int argc, char** argv) {
 	int verbose = 2;
 	
-	// fill original data
+	//! fill original data
 	std::vector<double> x;
 	std::vector<double> y;
 	x.push_back(-3.89038); y.push_back(-3.14085);
@@ -85,17 +122,17 @@ int main (int argc, char** argv) {
 	x.push_back(-29.8641); y.push_back(-2.8527);
 	//x.push_back(); y.push_back();
 	
-	/* 
+	/** 
 	 * ### CONFORMAL MAPPING PART ###
 	 */
 	
-	// change container from vec_x and vec_y to host_vector<tuple<x, y> >
+	//! change container from vec_x and vec_y to host_vector<tuple<x, y> >
 // 	thrust::host_vector<thrust::tuple<double, double> > originalData(thrust::make_zip_iterator(thrust::make_tuple(x.begin(), y.end())), thrust::make_zip_iterator(thrust::make_tuple(x.end(), y.end()))); // should work, though
 	thrust::host_vector<thrust::tuple<double, double> > originalData;
 	for (int i = 0; i < x.size(); i++) {
 		originalData.push_back(thrust::make_tuple(x[i], y[i]));
 	}
-	thrust::device_vector<thrust::tuple<double, double> > d_originalData = originalData; // copy on device
+	thrust::device_vector<thrust::tuple<double, double> > d_originalData = originalData; //!< copy onto device
 	
 	if (verbose > 1) {
 		for (int i = 0; i < originalData.size(); i++) {
@@ -104,9 +141,9 @@ int main (int argc, char** argv) {
 		}
 	}	
 	
-	thrust::device_vector<thrust::tuple<double, double> > d_mappedData(originalData.size()); // create empty device_vector for mapped data
-	thrust::transform(d_originalData.begin(), d_originalData.end(), d_mappedData.begin(), confMap()); // map data
-	thrust::host_vector<thrust::tuple<double, double> > mappedData = d_mappedData; // copy back to host
+	thrust::device_vector<thrust::tuple<double, double> > d_mappedData(originalData.size()); //!< create empty device_vector for mapped data
+	thrust::transform(d_originalData.begin(), d_originalData.end(), d_mappedData.begin(), confMap()); //!< conformal map data
+	thrust::host_vector<thrust::tuple<double, double> > mappedData = d_mappedData; //!< copy back to host
 	
 	if (verbose > 0) {
 		for (int i = 0; i < mappedData.size(); i++) {
@@ -115,28 +152,29 @@ int main (int argc, char** argv) {
 		}
 	}
 	
-	/* 
+	/** 
 	 * ### HOUGH TRANSFORM PART ###
 	 */
-	double everyXDegrees = 30; // make a point every X degrees of alpha
-	thrust::host_vector<double> alphas(360/everyXDegrees); // create host vector with enough space for 360/everyXDegrees elements
-	thrust::sequence(alphas.begin(), alphas.end(), 0., everyXDegrees); // fill the just created vector with alphas -- this vector is the basis for the hough transformation
+	double everyXDegrees = 30; //!< make a point every X degrees of alpha
+	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
+	thrust::host_vector<double> alphas(360/everyXDegrees); //!< create host vector with enough space for 360/everyXDegrees elements
+	thrust::sequence(alphas.begin(), alphas.end(), 0., everyXDegrees); //!< fill the just created vector with alphas -- this vector is the basis for the hough transformation
 	if (verbose > 1) {
 		for (int i = 0; i < alphas.size(); i++) {
 			std::cout << "alpha[" << i << "] = " << alphas[i] << std::endl;
 		}
 	}
 	
-	std::vector<thrust::host_vector<double> > transformedPoints; // create empty vector for all the hough transformed points, has size of: x.size() * 360/everyXDegrees
+	std::vector<thrust::host_vector<double> > transformedPoints; //!< create empty vector for all the hough transformed points, has size of: x.size() * 360/everyXDegrees
 	
-	for (int i = 0; i < mappedData.size(); i++) { // ON HOST! loop over all (conf mapped) data points
+	for (int i = 0; i < mappedData.size(); i++) { //!< ON HOST! loop over all (conf mapped) data points
 		thrust::device_vector<double> d_tempAlphas = alphas;
-		thrust::device_vector<double> d_tempD(d_tempAlphas.size()); // create temp (and empty) device side vector to store the results of the hough transform in
-		thrust::constant_iterator<thrust::tuple<double, double> > currentData(d_mappedData[i]); // create constant iterator for the conf mapped data 2-tuples
+		thrust::device_vector<double> d_tempD(d_tempAlphas.size()); //!< create temp (and empty) device side vector to store the results of the hough transform in
+		thrust::constant_iterator<thrust::tuple<double, double> > currentData(d_mappedData[i]); //!< create constant iterator for the conf mapped data 2-tuples
 		
-		// following transformation uses the operator of transf to run over all elements
-		//   elements being a iterator from alpha.start to alpha.end with each time the constant iterator with the conf mapped 2-tuple
-		//   the result of the calculation is written in to the d_tempD vector
+		//! following transformation uses the operator of transf to run over all elements
+		//!   elements being a iterator from alpha.start to alpha.end with each time the constant iterator with the conf mapped 2-tuple
+		//!   the result of the calculation is written in to the d_tempD vector
 		transform(
 			thrust::make_zip_iterator(
 				thrust::make_tuple(
@@ -154,16 +192,38 @@ int main (int argc, char** argv) {
 			transf()
 		);
 		
-		thrust::host_vector<double> tempD = d_tempD; // copy device side array to host
-		transformedPoints.push_back(tempD); // push it back to global data vector
+		thrust::host_vector<double> tempD = d_tempD; //!< copy device side array to host
+		transformedPoints.push_back(tempD); //!< push it back to global data vector
 	}
 	
 	for (int i = 0; i < transformedPoints.size(); i++) {
 		std::cout << "transformedPoints[" << i << "].size() = " << transformedPoints[i].size() << std::endl;
 		for (int j = 0; j < transformedPoints[i].size(); j++) {
-			std::cout << "  transformedPoints[" << i << "] = " << transformedPoints[i][j] << std::endl;
+			std::cout << "  transformedPoints[" << i << "][" << j << "] = " << transformedPoints[i][j] << std::endl;
 		}
 	}
+	
+	/**
+	 * ### ROOT VISUALIZATION ###
+	 */
+	
+	TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 180, (int)360, -0.2, 0.2);
+	thatHist->GetXaxis()->SetTitle("Angle / #circ");
+	thatHist->GetYaxis()->SetTitle("Hough transformed");
+	
+	for (int i = 0; i < transformedPoints.size(); i++) {
+		for (int j = 0; j < transformedPoints[i].size(); j++) {
+			thatHist->Fill(alphas[j], transformedPoints[i][j]);
+		}
+	}
+	
+	TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
+	TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
+
+	thatHist->Draw("COLZ");
+	c1->Update();
+	theApp->Run();
+	
 	
 	/*
 	 * 

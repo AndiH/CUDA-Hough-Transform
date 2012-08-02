@@ -18,6 +18,7 @@
 #include "TROOT.h"
 #include "TApplication.h"
 #include "TCanvas.h"
+#include "TStopwatch.h"
 
 /**
  * @mainpage Conformal Mapping and Hough Transformation in CUDA Thrust
@@ -93,7 +94,7 @@ struct transf {
 
 		double y = thrust::get<1>(xy);
 		
-		printf("alpha * x + alpha * y = %f * %f + %f * %f\n", alpha, x, alpha, y);
+// 		printf("alpha * x + alpha * y = %f * %f + %f * %f\n", alpha, x, alpha, y);
 		
 		return houghTransfFunction(alpha, x, y);
 	}
@@ -109,7 +110,7 @@ void printTuple (thrust::tuple<double, double> thatTuple) {
 }
 
 int main (int argc, char** argv) {
-	int verbose = 2;
+	int verbose = 0;
 	
 	//! fill original data
 	std::vector<double> x;
@@ -125,7 +126,7 @@ int main (int argc, char** argv) {
 	/** 
 	 * ### CONFORMAL MAPPING PART ###
 	 */
-	
+	TStopwatch myWatch;
 	//! change container from vec_x and vec_y to host_vector<tuple<x, y> >
 // 	thrust::host_vector<thrust::tuple<double, double> > originalData(thrust::make_zip_iterator(thrust::make_tuple(x.begin(), y.end())), thrust::make_zip_iterator(thrust::make_tuple(x.end(), y.end()))); // should work, though
 	thrust::host_vector<thrust::tuple<double, double> > originalData;
@@ -196,14 +197,21 @@ int main (int argc, char** argv) {
 		transformedPoints.push_back(tempD); //!< push it back to global data vector
 	}
 	
+	if (verbose > 0) {
 	for (int i = 0; i < transformedPoints.size(); i++) {
 		std::cout << "transformedPoints[" << i << "].size() = " << transformedPoints[i].size() << std::endl;
 		for (int j = 0; j < transformedPoints[i].size(); j++) {
 			std::cout << "  transformedPoints[" << i << "][" << j << "] = " << transformedPoints[i][j] << std::endl;
 		}
 	}
+	}
 	
-	/**
+	myWatch.Stop();
+	std::cout << "For operations, it took me ";
+	myWatch.Print();
+	std::cout << std::endl;
+	
+	/*
 	 * ### ROOT VISUALIZATION ###
 	 */
 	

@@ -245,9 +245,13 @@ int main (int argc, char** argv) {
 	 * 	use cusp & cusp example: http://code.google.com/p/cusp-library/source/browse/examples/MatrixAssembly/unordered_triplets.cu
 	 * 	V[n] = 1
 	 * 	calculate I[n] & J[n] due to resolution of matrix grid
-	 * 	PSEUDO CODE:
-	 * 		NGRIDPOINTS_ALPHA = 360 / everyXDegrees
-	 * 		NGRIDPOINTS_D = 360
+	 * 	TESTCODE
+	 * 		int anzahlderpunkte = 6;
+	 * 		int gesamtbreite = 3;
+	 * 		double zellenbreite = gesamtbreite / anzahlderpunkte;
+	 * 		double testZahl = 2.6; // muss in die zelle #3 (1 --> 1,5)
+	 * 		int testZahlMussInZelle = (int) (testZahl/zellenbreite);
+	 * 
 	 * 
 	 * 
 	 * make peak finder

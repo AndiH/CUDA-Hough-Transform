@@ -215,27 +215,41 @@ int main (int argc, char** argv) {
 	 * ### ROOT VISUALIZATION ###
 	 */
 	
-	TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 180, (int)360, -0.2, 0.2);
-	thatHist->GetXaxis()->SetTitle("Angle / #circ");
-	thatHist->GetYaxis()->SetTitle("Hough transformed");
+	bool doRoot = true;
+	if (argc > 2) doRoot = (bool)atof(argv[2]);
 	
-	for (int i = 0; i < transformedPoints.size(); i++) {
-		for (int j = 0; j < transformedPoints[i].size(); j++) {
-			thatHist->Fill(alphas[j], transformedPoints[i][j]);
+	if (doRoot) {
+		TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 180, (int)360, -0.2, 0.2);
+		thatHist->GetXaxis()->SetTitle("Angle / #circ");
+		thatHist->GetYaxis()->SetTitle("Hough transformed");
+	
+		for (int i = 0; i < transformedPoints.size(); i++) {
+			for (int j = 0; j < transformedPoints[i].size(); j++) {
+				thatHist->Fill(alphas[j], transformedPoints[i][j]);
+			}
 		}
-	}
+		
+		TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
+		TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
 	
-	TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
-	TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
-
-	thatHist->Draw("COLZ");
-	c1->Update();
-	theApp->Run();
+		thatHist->Draw("COLZ");
+		c1->Update();
+		theApp->Run();
+	}
 	
 	
 	/*
 	 * 
 	 * ### TODO ###
+	 * create matrix from point
+	 * 	use cusp & cusp example: http://code.google.com/p/cusp-library/source/browse/examples/MatrixAssembly/unordered_triplets.cu
+	 * 	V[n] = 1
+	 * 	calculate I[n] & J[n] due to resolution of matrix grid
+	 * 	PSEUDO CODE:
+	 * 		NGRIDPOINTS_ALPHA = 360 / everyXDegrees
+	 * 		NGRIDPOINTS_D = 360
+	 * 
+	 * 
 	 * make peak finder
 	 * outline:
 	 * 	create rough grid

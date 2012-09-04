@@ -205,36 +205,53 @@ int main (int argc, char** argv) {
 	 * ### Make CUSP Matrix ###
 	 */
 	
-	// First find least y value to shift all values up
-	std::vector<double> minValues;
+	// Find borders
+	double minValue = transformedPoints[0][0];
+	double maxValue = transformedPoints[0][0];
 	for (int i = 0; i < mappedData.size(); i++) {
 		thrust::device_vector<double> tempD(transformedPoints[i]);
-		double min = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
-		minValues.push_back(min);
+		double minimum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
+		double maximum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::maximum<double>());
+		if (minimum < minValue) minValue = minimum;
+		if (maximum < maxValue) maxValue = maximum;
 	}
+//	// First find least y value to shift all values up
+//	std::vector<double> minValues;
+//	for (int i = 0; i < mappedData.size(); i++) {
+//		thrust::device_vector<double> tempD(transformedPoints[i]);
+//		double min = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
+//		minValues.push_back(min);
+//	}
+//
+//	double leastValue = *(std::min_element(minValues.begin(), minValues.end()));
+//
+//	std::cout << leastValue << std::endl;
 	
-	double leastValue = *(std::min_element(minValues.begin(), minValues.end()));
-	
-	std::cout << leastValue << std::endl;
-	
-	// Loop over all values and shift them for the amount of leastValue
-	// This overwrites all the original values!
-	for (int i = 0; i < mappedData.size(); i++) {
-		thrust::transform(transformedPoints[i].begin(), transformedPoints[i].end(), thrust::make_constant_iterator(abs(leastValue)), transformedPoints[i].begin(), thrust::plus<double>());
-	}
+//	// Loop over all values and shift them for the amount of leastValue
+//	// This overwrites all the original values!
+//	for (int i = 0; i < mappedData.size(); i++) {
+//		thrust::transform(transformedPoints[i].begin(), transformedPoints[i].end(), thrust::make_constant_iterator(abs(leastValue)), transformedPoints[i].begin(), thrust::plus<double>());
+//	}
+	int nBinsX = (int) 360/everyXDegrees;
+	int nBinsY = 360;
+	minValue -= everyXDegrees;
+	maxValue -= everyXDegrees;
 	
 	// Now create the Matrices
-	std::vector<TMatrixD> theMatrices;
+	std::vector<TH2D> theHistograms;
 	for (int i = 0; i < mappedData.size(); i++) {
-		AhTwoArraysToMatrix tempMatrix(
+		AhTwoArraysToMatrix tempObject(
 			thrust::device_vector<double> (alphas), thrust::device_vector<double> (transformedPoints[i]),
-			(int) 360/everyXDegrees,
-			360,
-			360, 
-			0.4);
-		theMatrices.push_back(tempMatrix.GetTMatrixD());
+			nBinsX,
+			minValue,
+			maxValue,
+			nBinsY,
+			-0.2,
+			0.2);
+
+		theHistograms.push_back(tempObject.GetHistogram());
 	}
-	AhTwoArraysToMatrix test();
+
 	
 	/*
 	 * ### DEBUG Output ###
@@ -262,7 +279,8 @@ int main (int argc, char** argv) {
 	if (argc > 2) doRoot = (bool)atof(argv[2]);
 	
 	if (doRoot) {
-		TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 360, (int)360, -0.2, 0.2);
+//		TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 360, (int)360, -0.2, 0.2);
+		TH2D * thatHist = &theHistograms[0];
 		thatHist->GetXaxis()->SetTitle("Angle / #circ");
 		thatHist->GetYaxis()->SetTitle("Hough transformed");
 	

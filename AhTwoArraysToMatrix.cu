@@ -1,17 +1,35 @@
 #include "AhTwoArraysToMatrix.h"
 #include "AhTranslatorFunction.h"
 
+/* TODO
+ * 
+ * check bounds: are all values in range of xylow xyup?
+ * find out why old idea of functions doesnt work
+ * 
+ * deliver two functions:
+ * 	give translated value
+ * 	give array translated VALUES
+ * 
+ * peak finder
+ */
+
+
 AhTwoArraysToMatrix::AhTwoArraysToMatrix()
 {}
 
-AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double maxx, int nbinsy, double maxy)
+AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup)
 : fXValues(xValues),
   fYValues(yValues),
   fNBinsX(nbinsx),
   fNBinsY(nbinsy),
-  fMaxX(maxx),
-  fMaxY(maxy)
+  fXlow(xlow),
+  fXup(xup),
+  fYlow(ylow),
+  fYup(yup)
 {
+	fXStepWidth = (fXup - fXlow)/(fNBinsX);
+	fYStepWidth = (fYup - fYlow)/(fNBinsY);
+	
 	DoTranslations();
 	
  	CalculateHistogram();
@@ -21,52 +39,30 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
 AhTwoArraysToMatrix::~AhTwoArraysToMatrix()
 {}
 
- void AhTwoArraysToMatrix::SetXValues(thrust::host_vector<double> xValues)
- {
- 	fXValues = xValues;
- }
- void AhTwoArraysToMatrix::SetYValues(thrust::host_vector<double> yValues)
- {
- 	fYValues = yValues;
- }
- void AhTwoArraysToMatrix::SetNBinsX(int nbinsx)
- {
- 	fNBinsX = nbinsx;
- }
- void AhTwoArraysToMatrix::SetNBinsY(int nbinsy)
- {
- 	fNBinsY = nbinsy;
- }
- void AhTwoArraysToMatrix::SetMaxX(double maxx)
- {
- 	fMaxX = maxx;
- }
- void AhTwoArraysToMatrix::SetMaxY(double maxy)
- {
- 	fMaxY = maxy;
- }
-
 void AhTwoArraysToMatrix::DoTranslations()
 {
 
 	thrust::device_vector<double> d_tempDummyX(fXValues.size());
  	thrust::device_vector<double> d_tempfXValues = fXValues;
 
- 	double widthOfCellX = fNBinsX / fMaxX;
- 	thrust::transform(d_tempfXValues.begin(), d_tempfXValues.end(), d_tempDummyX.begin(), AhTranslatorFunction(widthOfCellX));
-
+ 	thrust::transform(d_tempfXValues.begin(), d_tempfXValues.end(), d_tempDummyX.begin(), AhTranslatorFunction(fXStepWidth, fXlow));
+	
  	fTranslatedXValues = d_tempDummyX;
 
 	thrust::device_vector<double> d_tempDummyY(fYValues.size());
  	thrust::device_vector<double> d_tempfYValues = fYValues;
 
- 	double widthOfCellY = fNBinsY / fMaxY;
- 	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(widthOfCellY));
+ 	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(fYStepWidth, fYlow));
 	
  	fTranslatedYValues = d_tempDummyY;
 	
  	// 	fTranslatedXValues = TranslateValuesToMatrixCoordinates(tempVecX, fNBinsX, fMaxX); // ## TODO: IMPLEMENT FUNCTIONS FOR THIS
  	// 	fTranslatedYValues = TranslateValuesToMatrixCoordinates(fYValues, fNBinsY, fMaxY);
+	
+	// ### DEBUG OUTPUT
+// 	for (int i = 0; i < fTranslatedXValues.size(); i++) {
+// 		std::cout << "(x,y)_" << i << " = (" << fXValues[i] << "," << fYValues[i] << ") --> (" << fTranslatedXValues[i] << "," << fTranslatedYValues[i] << ")" << std::endl;	
+// 	}
 }
 
 //thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinates (thrust::device_vector<double> values, int nOfPoints, double dimension) {
@@ -118,7 +114,17 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
 	TMatrixD myMatrix(fNBinsX, fNBinsY);
 	for (int i = 0; i < fCUSPMatrix.num_entries; i++) {
-		myMatrix[fCUSPMatrix.row_indices[i]][fCUSPMatrix.column_indices[i]] = fCUSPMatrix.values[i];
+		myMatrix[fCUSPMatrix.column_indices[i]][fCUSPMatrix.row_indices[i]] = fCUSPMatrix.values[i];
 	}
 	return myMatrix;
+}
+
+TH2D AhTwoArraysToMatrix::GetHistogram()
+{
+	// Gives TH2D Histogram with proper, re-translated boundaries
+	TH2D tempHisto(GetTMatrixD());
+	tempHisto.GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
+	tempHisto.GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
+	
+	return tempHisto;
 }

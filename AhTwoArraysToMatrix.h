@@ -34,16 +34,18 @@ class AhTwoArraysToMatrix
 {
 public:
 	AhTwoArraysToMatrix();
-	AhTwoArraysToMatrix(thrust::host_vector<double>, thrust::host_vector<double>, int, double, int, double);
+	AhTwoArraysToMatrix(thrust::host_vector<double>, thrust::host_vector<double>, int, double, double, int, double, double);
 	
 	virtual ~AhTwoArraysToMatrix();
 	
- 	void SetXValues(thrust::host_vector<double>);
- 	void SetYValues(thrust::host_vector<double>);
- 	void SetNBinsX(int);
- 	void SetNBinsY(int);
- 	void SetMaxX(double);
- 	void SetMaxY(double);
+	void SetXValues(thrust::host_vector<double> _xvalues) { fXValues = _xvalues; };
+	void SetYValues(thrust::host_vector<double> _yvalues) { fYValues = _yvalues; };
+	void SetNBinsX(int _nbinsx) { fNBinsX = _nbinsx; };
+	void SetNBinsY(int _nbinsy) { fNBinsY = _nbinsy; };
+	void SetXlow(double _xlow) { fXlow = _xlow; };
+	void SetXup(double _xup) { fXup = _xup; };
+	void SetYlow(double _ylow) { fYlow = _ylow; };
+	void SetYup(double _yup) { fYup = _yup; };
 	
 	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (thrust::device_vector<double>, int, double);
 	
@@ -52,6 +54,13 @@ public:
 	
 	cusp::coo_matrix<int, float, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}
 	TMatrixD GetTMatrixD();
+	TH2D GetHistogram();
+	int GetNBinsX() { return fNBinsX; };
+	int GetNBinsY() { return fNBinsY; };
+	double GetXlow() { return fXlow; };
+	double GetXup() { return fXup; };
+	double GetYlow() { return fYlow; };
+	double GetYup() { return fYup; };
 	
 private:
 	thrust::host_vector<double> fXValues;
@@ -60,9 +69,14 @@ private:
 	thrust::device_vector<double> fTranslatedYValues;
 	int fNBinsX;
 	int fNBinsY;
-	double fMaxX;
-	double fMaxY;
+	double fXlow;
+	double fXup;
+	double fYlow;
+	double fYup;
 	cusp::coo_matrix<int, float, cusp::device_memory> fCUSPMatrix;
+	
+	double fXStepWidth;
+	double fYStepWidth;
 };
 
 // SetXValues

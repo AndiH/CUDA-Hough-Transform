@@ -114,19 +114,19 @@ void AhTwoArraysToMatrix::DoTranslations()
 TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
 	TMatrixD myMatrix(fNBinsY, fNBinsX);
-	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
-	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
+//	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
+//	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
 	for (int i = 0; i < fCUSPMatrix.num_entries; i++) {
 		int column_index = fCUSPMatrix.column_indices[i];
 		int row_index = fCUSPMatrix.row_indices[i];
 		int value = fCUSPMatrix.values[i];
 
-		std::cout << i << " - columindex = " << column_index << ", rowindex = " <<  row_index << ", value = " << value << std::endl;
+//		std::cout << i << " - columindex = " << column_index << ", rowindex = " <<  row_index << ", value = " << value << std::endl;
 
 		if (column_index <= fNBinsY && column_index >= 0 && row_index <= fNBinsX && row_index >= 0) {
 			myMatrix[column_index][row_index] = value;
 		} else {
-			std::cout << "matrix element not filled" << std::endl;
+//			std::cout << "matrix element not filled" << std::endl;
 		}
 	}
 	return myMatrix;

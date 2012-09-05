@@ -113,6 +113,11 @@ void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }
 
+/**
+ * @brief Adds up TH2D histograms
+ * @param vHistograms A std vector with pointers to TH2D histograms
+ * @return A pointer to a TH2D histogram
+ */
 TH2D * addVectorOfPToHistograms (std::vector<TH2D* > vHistograms) {
 	TH2D * tempHist = new TH2D(*(vHistograms[0]));
 	for (int i = 1; i < vHistograms.size(); i++) {
@@ -122,7 +127,7 @@ TH2D * addVectorOfPToHistograms (std::vector<TH2D* > vHistograms) {
 }
 
 int main (int argc, char** argv) {
-	int verbose = 1;
+	int verbose = 0;
 	
 	//! fill original data
 	std::vector<double> x;
@@ -212,23 +217,6 @@ int main (int argc, char** argv) {
 	/*
 	 * ### Make CUSP Matrix ###
 	 */
-//	// First find least y value to shift all values up
-//	std::vector<double> minValues;
-//	for (int i = 0; i < mappedData.size(); i++) {
-//		thrust::device_vector<double> tempD(transformedPoints[i]);
-//		double min = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
-//		minValues.push_back(min);
-//	}
-//
-//	double leastValue = *(std::min_element(minValues.begin(), minValues.end()));
-//
-//	std::cout << leastValue << std::endl;
-	
-//	// Loop over all values and shift them for the amount of leastValue
-//	// This overwrites all the original values!
-//	for (int i = 0; i < mappedData.size(); i++) {
-//		thrust::transform(transformedPoints[i].begin(), transformedPoints[i].end(), thrust::make_constant_iterator(abs(leastValue)), transformedPoints[i].begin(), thrust::plus<double>());
-//	}
 	int nBinsX = (int) 360/everyXDegrees;
 	double minValueX = 0;
 	double maxValueX = 360;
@@ -298,8 +286,7 @@ int main (int argc, char** argv) {
 	if (argc > 2) doRoot = (bool)atof(argv[2]);
 	
 	if (doRoot) {
-//		TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 360, (int)360, -0.2, 0.2);
-//		TH2D * thatHist = theHistograms[0];
+
 		TH2D * thatHist = addVectorOfPToHistograms(theHistograms);
 		thatHist->GetXaxis()->SetTitle("Angle / #circ");
 		thatHist->GetYaxis()->SetTitle("Hough transformed");

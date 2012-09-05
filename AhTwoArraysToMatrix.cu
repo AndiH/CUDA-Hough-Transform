@@ -3,7 +3,6 @@
 
 /* TODO
  * 
- * check bounds: are all values in range of xylow xyup?
  * find out why old idea of functions doesnt work
  * tstopwatches
  * 
@@ -18,7 +17,7 @@
 AhTwoArraysToMatrix::AhTwoArraysToMatrix()
 {}
 
-AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup)
+AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup, bool doBoundaryCheck)
 : fXValues(xValues),
   fYValues(yValues),
   fNBinsX(nbinsx),
@@ -28,17 +27,42 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
   fYlow(ylow),
   fYup(yup)
 {
+	bool dontbreak = true;
+
 	fXStepWidth = (fXup - fXlow)/(fNBinsX);
 	fYStepWidth = (fYup - fYlow)/(fNBinsY);
 	
-	DoTranslations();
-	
- 	CalculateHistogram();
+	if (doBoundaryCheck == true) dontbreak = DoBoundaryCheck();
+
+	if (dontbreak == true) {
+		DoTranslations();
+
+		CalculateHistogram();
+	} else {
+		std::cout << "Did nothing due to some error." << std::endl;
+	}
 }
 
 
 AhTwoArraysToMatrix::~AhTwoArraysToMatrix()
 {}
+
+bool AhTwoArraysToMatrix::DoBoundaryCheck() {
+	bool everythingIsOk = true;
+
+	double minimumX = *(thrust::min_element(fXValues.begin(), fXValues.end()));
+	double maximumX = *(thrust::max_element(fXValues.begin(), fXValues.end()));
+	double minimumY = *(thrust::min_element(fYValues.begin(), fYValues.end()));
+	double maximumY = *(thrust::max_element(fYValues.begin(), fYValues.end()));
+
+	if (minimumX < fXlow || maximumX > fXup || minimumY < fYlow || maximumY > fYup) {
+		std::cout << "Values are out of boundaries! Breaking!" << std::endl;
+		std::cout << "  " << minimumX << " !>= " << fXlow << ",   " << maximumX << "!<=" << fXup << std::endl;
+		std::cout << "  " << minimumY << " !>= " << fYlow << ",   " << maximumY << "!<=" << fYup << std::endl;
+		everythingIsOk = false;
+	}
+	return everythingIsOk;
+}
 
 void AhTwoArraysToMatrix::DoTranslations()
 {
@@ -134,7 +158,7 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 
 TH2D * AhTwoArraysToMatrix::GetHistogram()
 {
-	// Gives TH2D Histogram with proper, re-translated boundaries
+	// Gives a pointer to a TH2D histogram with proper, re-translated boundaries
 	TH2D * tempHisto = new TH2D(GetTMatrixD());
 	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
 	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);

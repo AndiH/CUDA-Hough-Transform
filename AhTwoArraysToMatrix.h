@@ -7,6 +7,7 @@
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/functional.h>
+#include <thrust/extrema.h>
 #include <thrust/transform.h>
 #include <thrust/sort.h>
 #include <thrust/reduce.h>
@@ -34,7 +35,7 @@ class AhTwoArraysToMatrix
 {
 public:
 	AhTwoArraysToMatrix();
-	AhTwoArraysToMatrix(thrust::host_vector<double>, thrust::host_vector<double>, int, double, double, int, double, double);
+	AhTwoArraysToMatrix(thrust::host_vector<double>, thrust::host_vector<double>, int, double, double, int, double, double,  bool doBoundaryCheck = false);
 	
 	virtual ~AhTwoArraysToMatrix();
 	
@@ -49,7 +50,8 @@ public:
 	
 	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (thrust::device_vector<double>, int, double);
 	
-	void DoTranslations();
+ 	bool DoBoundaryCheck();
+ 	void DoTranslations();
  	void CalculateHistogram();
 	
 	cusp::coo_matrix<int, float, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}

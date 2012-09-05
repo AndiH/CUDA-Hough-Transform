@@ -54,7 +54,7 @@ public:
 	
 	cusp::coo_matrix<int, float, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}
 	TMatrixD GetTMatrixD();
-	TH2D GetHistogram();
+	TH2D * GetHistogram();
 	int GetNBinsX() { return fNBinsX; };
 	int GetNBinsY() { return fNBinsY; };
 	double GetXlow() { return fXlow; };

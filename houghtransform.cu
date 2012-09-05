@@ -113,8 +113,16 @@ void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }
 
+TH2D * addVectorOfPToHistograms (std::vector<TH2D* > vHistograms) {
+	TH2D * tempHist = new TH2D(*(vHistograms[0]));
+	for (int i = 1; i < vHistograms.size(); i++) {
+		tempHist->Add(vHistograms[i]);
+	}
+	return tempHist;
+}
+
 int main (int argc, char** argv) {
-	int verbose = 0;
+	int verbose = 1;
 	
 	//! fill original data
 	std::vector<double> x;
@@ -204,17 +212,6 @@ int main (int argc, char** argv) {
 	/*
 	 * ### Make CUSP Matrix ###
 	 */
-	
-	// Find borders
-	double minValue = transformedPoints[0][0];
-	double maxValue = transformedPoints[0][0];
-	for (int i = 0; i < mappedData.size(); i++) {
-		thrust::device_vector<double> tempD(transformedPoints[i]);
-		double minimum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
-		double maximum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::maximum<double>());
-		if (minimum < minValue) minValue = minimum;
-		if (maximum < maxValue) maxValue = maximum;
-	}
 //	// First find least y value to shift all values up
 //	std::vector<double> minValues;
 //	for (int i = 0; i < mappedData.size(); i++) {
@@ -233,26 +230,48 @@ int main (int argc, char** argv) {
 //		thrust::transform(transformedPoints[i].begin(), transformedPoints[i].end(), thrust::make_constant_iterator(abs(leastValue)), transformedPoints[i].begin(), thrust::plus<double>());
 //	}
 	int nBinsX = (int) 360/everyXDegrees;
+	double minValueX = 0;
+	double maxValueX = 360;
+	if (verbose > 0) std::cout << "nBinsX = " << nBinsX << ", minValueX = " << minValueX << " ,maxValueX = " << maxValueX << std::endl;
+
 	int nBinsY = 360;
-	minValue -= everyXDegrees;
-	maxValue -= everyXDegrees;
+	double minValueY = -0.21;
+	double maxValueY = 0.21;
+	if (verbose > 0) std::cout << "nBinsY = " << nBinsY << ", minValueY = " << minValueY << ", maxValueY " << maxValueY << std::endl;
+	// ALTERNATIVE DEFINITION OF M**VALUEY: using automated mins and maxes
+//	double minValueY = transformedPoints[0][0];
+//	double maxValueY = transformedPoints[0][0];
+//	for (int i = 0; i < mappedData.size(); i++) {
+//		thrust::device_vector<double> tempD(transformedPoints[i]);
+//		double minimum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
+//		double maximum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::maximum<double>());
+//		if (minimum < minValue) minValueY = minimum;
+//		if (maximum > maxValue) maxValueY = maximum;
+//	}
+//	minValueY -= everyXDegrees;
+//	maxValueY -= everyXDegrees;
 	
 	// Now create the Matrices
-	std::vector<TH2D> theHistograms;
+	std::vector<TH2D*> theHistograms;
 	for (int i = 0; i < mappedData.size(); i++) {
 		AhTwoArraysToMatrix tempObject(
 			thrust::device_vector<double> (alphas), thrust::device_vector<double> (transformedPoints[i]),
 			nBinsX,
-			minValue,
-			maxValue,
+			minValueX,
+			maxValueX,
 			nBinsY,
-			-0.2,
-			0.2);
+			minValueY,
+			maxValueY);
+
+		if (verbose > 0) std::cout << "Some matrix parameters: " << tempObject.GetNBinsX() << " " << tempObject.GetXlow() << " " << tempObject.GetXup() << " "<< tempObject.GetNBinsY() <<  " " << tempObject.GetYlow() << " " << tempObject.GetYup() << std::endl;
 
 		theHistograms.push_back(tempObject.GetHistogram());
+		char tempchar[5];
+		sprintf(tempchar, "%d", i);
+		theHistograms[i]->SetName(tempchar);
 	}
 
-	
+
 	/*
 	 * ### DEBUG Output ###
 	 */
@@ -280,15 +299,16 @@ int main (int argc, char** argv) {
 	
 	if (doRoot) {
 //		TH2D * thatHist = new TH2D("thatHist", "Hist", (int)360/everyXDegrees, 0, 360, (int)360, -0.2, 0.2);
-		TH2D * thatHist = &theHistograms[0];
+//		TH2D * thatHist = theHistograms[0];
+		TH2D * thatHist = addVectorOfPToHistograms(theHistograms);
 		thatHist->GetXaxis()->SetTitle("Angle / #circ");
 		thatHist->GetYaxis()->SetTitle("Hough transformed");
 	
-		for (int i = 0; i < transformedPoints.size(); i++) {
-			for (int j = 0; j < transformedPoints[i].size(); j++) {
-				thatHist->Fill(alphas[j], transformedPoints[i][j]);
-			}
-		}
+//		for (int i = 0; i < transformedPoints.size(); i++) {
+//			for (int j = 0; j < transformedPoints[i].size(); j++) {
+//				thatHist->Fill(alphas[j], transformedPoints[i][j]);
+//			}
+//		}
 		
 		TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
 		TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);

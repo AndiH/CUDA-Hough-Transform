@@ -5,6 +5,7 @@
  * 
  * check bounds: are all values in range of xylow xyup?
  * find out why old idea of functions doesnt work
+ * tstopwatches
  * 
  * deliver two functions:
  * 	give translated value
@@ -112,19 +113,31 @@ void AhTwoArraysToMatrix::DoTranslations()
 
 TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
-	TMatrixD myMatrix(fNBinsX, fNBinsY);
+	TMatrixD myMatrix(fNBinsY, fNBinsX);
+	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
+	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
 	for (int i = 0; i < fCUSPMatrix.num_entries; i++) {
-		myMatrix[fCUSPMatrix.column_indices[i]][fCUSPMatrix.row_indices[i]] = fCUSPMatrix.values[i];
+		int column_index = fCUSPMatrix.column_indices[i];
+		int row_index = fCUSPMatrix.row_indices[i];
+		int value = fCUSPMatrix.values[i];
+
+		std::cout << i << " - columindex = " << column_index << ", rowindex = " <<  row_index << ", value = " << value << std::endl;
+
+		if (column_index <= fNBinsY && column_index >= 0 && row_index <= fNBinsX && row_index >= 0) {
+			myMatrix[column_index][row_index] = value;
+		} else {
+			std::cout << "matrix element not filled" << std::endl;
+		}
 	}
 	return myMatrix;
 }
 
-TH2D AhTwoArraysToMatrix::GetHistogram()
+TH2D * AhTwoArraysToMatrix::GetHistogram()
 {
 	// Gives TH2D Histogram with proper, re-translated boundaries
-	TH2D tempHisto(GetTMatrixD());
-	tempHisto.GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
-	tempHisto.GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
+	TH2D * tempHisto = new TH2D(GetTMatrixD());
+	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
+	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
 	
 	return tempHisto;
 }

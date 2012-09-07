@@ -17,7 +17,7 @@
 AhTwoArraysToMatrix::AhTwoArraysToMatrix()
 {}
 
-AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup, bool doBoundaryCheck)
+AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup, bool doTiming, bool doBoundaryCheck)
 : fXValues(xValues),
   fYValues(yValues),
   fNBinsX(nbinsx),
@@ -25,7 +25,8 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
   fXlow(xlow),
   fXup(xup),
   fYlow(ylow),
-  fYup(yup)
+  fYup(yup),
+  fDoTiming(doTiming)
 {
 	bool dontbreak = true;
 
@@ -61,12 +62,13 @@ bool AhTwoArraysToMatrix::DoBoundaryCheck() {
 		std::cout << "  " << minimumY << " !>= " << fYlow << ",   " << maximumY << "!<=" << fYup << std::endl;
 		everythingIsOk = false;
 	}
+	
 	return everythingIsOk;
 }
 
 void AhTwoArraysToMatrix::DoTranslations()
 {
-
+	if (fDoTiming == true) fSwTranslateValues = new TStopwatch();
 	thrust::device_vector<double> d_tempDummyX(fXValues.size());
  	thrust::device_vector<double> d_tempfXValues = fXValues;
 
@@ -80,6 +82,8 @@ void AhTwoArraysToMatrix::DoTranslations()
  	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(fYStepWidth, fYlow));
 	
  	fTranslatedYValues = d_tempDummyY;
+	
+	if (fDoTiming == true) fSwTranslateValues->Stop();
 	
  	// 	fTranslatedXValues = TranslateValuesToMatrixCoordinates(tempVecX, fNBinsX, fMaxX); // ## TODO: IMPLEMENT FUNCTIONS FOR THIS
  	// 	fTranslatedYValues = TranslateValuesToMatrixCoordinates(fYValues, fNBinsY, fMaxY);
@@ -100,43 +104,68 @@ void AhTwoArraysToMatrix::DoTranslations()
 // 	return tempVec;
 // }
 
- void AhTwoArraysToMatrix::CalculateHistogram()
- {
-     thrust::device_vector<int> weightVector(fTranslatedXValues.size(), 1); // just dummy -- each cell should have weight of 1 // TODO: This, once, of course can be changed to support different weightes
-
-     // allocate storage for unordered triplets
-     cusp::array1d<int,   cusp::device_memory> I(fTranslatedXValues.begin(), fTranslatedXValues.end());  // row indices
-     cusp::array1d<int,   cusp::device_memory> J(fTranslatedYValues.begin(), fTranslatedYValues.end());  // column indices
-     cusp::array1d<float, cusp::device_memory> V(weightVector.begin(), weightVector.end());  // values
-
-     // sort triplets by (i,j) index using two stable sorts (first by J, then by I)
-     thrust::stable_sort_by_key(J.begin(), J.end(), thrust::make_zip_iterator(thrust::make_tuple(I.begin(), V.begin())));
-     thrust::stable_sort_by_key(I.begin(), I.end(), thrust::make_zip_iterator(thrust::make_tuple(J.begin(), V.begin())));
-
+void AhTwoArraysToMatrix::CalculateHistogram()
+{
+	thrust::device_vector<int> weightVector(fTranslatedXValues.size(), 1); // just dummy -- each cell should have weight of 1 // TODO: This, once, of course can be changed to support different weightes
+	
+	// allocate storage for unordered triplets
+	cusp::array1d<int, cusp::device_memory> I(fTranslatedXValues.begin(), fTranslatedXValues.end());  // row indices
+	cusp::array1d<int, cusp::device_memory> J(fTranslatedYValues.begin(), fTranslatedYValues.end());  // column indices
+	cusp::array1d<double, cusp::device_memory> V(weightVector.begin(), weightVector.end());  // values
+	
+	if (fDoTiming == true) fSwHistSort = new TStopwatch();
+	// sort triplets by (i,j) index using two stable sorts (first by J, then by I)
+	thrust::stable_sort_by_key(J.begin(), J.end(), thrust::make_zip_iterator(thrust::make_tuple(I.begin(), V.begin())));
+	thrust::stable_sort_by_key(I.begin(), I.end(), thrust::make_zip_iterator(thrust::make_tuple(J.begin(), V.begin())));
+	if (fDoTiming == true) fSwHistSort->Stop();
+	
      // compute unique number of nonzeros in the output
-     int num_entries = thrust::inner_product(thrust::make_zip_iterator(thrust::make_tuple(I.begin(), J.begin())),
-                                             thrust::make_zip_iterator(thrust::make_tuple(I.end (),  J.end()))   - 1,
-                                             thrust::make_zip_iterator(thrust::make_tuple(I.begin(), J.begin())) + 1,
-                                             int(0),
-                                             thrust::plus<int>(),
-                                             thrust::not_equal_to< thrust::tuple<int,int> >()) + 1;
-
-     // allocate output matrix
-     cusp::coo_matrix<int, float, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
-
-     // sum values with the same (i,j) index
-     thrust::reduce_by_key(thrust::make_zip_iterator(thrust::make_tuple(I.begin(), J.begin())),
-                           thrust::make_zip_iterator(thrust::make_tuple(I.end(),   J.end())),
-                           V.begin(),
-                           thrust::make_zip_iterator(thrust::make_tuple(A.row_indices.begin(), A.column_indices.begin())),
-                           A.values.begin(),
-                           thrust::equal_to< thrust::tuple<int,int> >(),
-                           thrust::plus<float>());
-     fCUSPMatrix = A;
- }
+	int num_entries = thrust::inner_product(
+		thrust::make_zip_iterator(
+			thrust::make_tuple(I.begin(), J.begin())
+		), 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(I.end (),  J.end())
+		) - 1, 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(I.begin(), J.begin())
+		) + 1, 
+		int(0), 
+		thrust::plus<int>(), 
+		thrust::not_equal_to< thrust::tuple<int,int> >()
+	) + 1;
+	
+	// allocate output matrix
+	cusp::coo_matrix<int, double, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
+	
+	if (fDoTiming == true) fSwHistSum = new TStopwatch();
+	// sum values with the same (i,j) index
+	thrust::reduce_by_key(
+		thrust::make_zip_iterator(
+			thrust::make_tuple(I.begin(), J.begin())
+		), 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(I.end(),   J.end())
+		), 
+		V.begin(), 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(A.row_indices.begin(), A.column_indices.begin())
+		), 
+		A.values.begin(), 
+		thrust::equal_to< thrust::tuple<int,int> >(), 
+		thrust::plus<double>()
+	);
+	if (fDoTiming == true) fSwHistSum->Stop();
+	
+	fCUSPMatrix = A;
+	fI = I;
+	fJ = J;
+	fV = V;
+}
 
 TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
+	if (fDoTiming == true) fSwCreateTMatrixD = new TStopwatch();
 	TMatrixD myMatrix(fNBinsY, fNBinsX);
 //	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
 //	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
@@ -153,15 +182,41 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 //			std::cout << "matrix element not filled" << std::endl;
 		}
 	}
+	if (fDoTiming == true) fSwCreateTMatrixD->Stop();
+	
 	return myMatrix;
 }
 
 TH2D * AhTwoArraysToMatrix::GetHistogram()
 {
 	// Gives a pointer to a TH2D histogram with proper, re-translated boundaries
+	if (fDoTiming == true) fSwCreateTH2D = new TStopwatch();
 	TH2D * tempHisto = new TH2D(GetTMatrixD());
 	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
 	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
+	if (fDoTiming == true) fSwCreateTH2D->Stop();
 	
 	return tempHisto;
+}
+
+template <class T>
+thrust::device_vector<T> AhTwoArraysToMatrix::CuspVectorToDeviceVector(const cusp::array1d<T, cusp::device_memory> &cuspvec)
+{
+	thrust::device_vector<T> values(cuspvec.begin(), cuspvec.end());
+	return values;
+}
+
+thrust::device_vector<int> AhTwoArraysToMatrix::GetPlainXValues()
+{
+	return CuspVectorToDeviceVector<int>(fJ);
+}
+
+thrust::device_vector<int> AhTwoArraysToMatrix::GetPlainYValues()
+{
+	return CuspVectorToDeviceVector<int>(fI);
+}
+
+thrust::device_vector<double> AhTwoArraysToMatrix::GetMultiplicities()
+{
+	return CuspVectorToDeviceVector<double>(fV);
 }

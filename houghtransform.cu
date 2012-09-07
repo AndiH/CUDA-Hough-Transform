@@ -22,6 +22,9 @@
 #include "TCanvas.h"
 #include "TStopwatch.h"
 
+#include <cusp/coo_matrix.h>
+#include <cusp/print.h>
+
 #include "AhTwoArraysToMatrix.h"
 
 /**
@@ -127,7 +130,7 @@ TH2D * addVectorOfPToHistograms (std::vector<TH2D* > vHistograms) {
 }
 
 int main (int argc, char** argv) {
-	int verbose = 0;
+	int verbose = 1;
 	
 	//! fill original data
 	std::vector<double> x;
@@ -241,6 +244,8 @@ int main (int argc, char** argv) {
 	
 	// Now create the Matrices
 	std::vector<TH2D*> theHistograms;
+	std::vector< cusp::coo_matrix<int, double, cusp::device_memory> > theMatrices;
+	std::vector<AhTwoArraysToMatrix> theObjects;
 	for (int i = 0; i < mappedData.size(); i++) {
 		AhTwoArraysToMatrix tempObject(
 			thrust::device_vector<double> (alphas), thrust::device_vector<double> (transformedPoints[i]),
@@ -249,11 +254,14 @@ int main (int argc, char** argv) {
 			maxValueX,
 			nBinsY,
 			minValueY,
-			maxValueY);
+			maxValueY,
+			true);
 
 		if (verbose > 0) std::cout << "Some matrix parameters: " << tempObject.GetNBinsX() << " " << tempObject.GetXlow() << " " << tempObject.GetXup() << " "<< tempObject.GetNBinsY() <<  " " << tempObject.GetYlow() << " " << tempObject.GetYup() << std::endl;
 
 		theHistograms.push_back(tempObject.GetHistogram());
+		theMatrices.push_back(tempObject.GetCUSPMatrix());
+		theObjects.push_back(tempObject);
 		char tempchar[5];
 		sprintf(tempchar, "%d", i);
 		theHistograms[i]->SetName(tempchar);
@@ -263,8 +271,23 @@ int main (int argc, char** argv) {
 	/*
 	 * ### DEBUG Output ###
 	 */
+	if (verbose > 5) cusp::print(theMatrices[0]);
+
+	if (verbose > 0) { // Timings
+		std::cout << "Timings for first histogram:" << std::endl;
+		std::cout << "  T for translating values: ";
+		theObjects[0].GetSwTranslateValues()->Print();
+		std::cout << "  T for sorting histogram vectors: ";
+		theObjects[0].GetSwHistSort()->Print();
+		std::cout << "  T for summing histogram vectors: ";
+		theObjects[0].GetSwHistSum()->Print();
+		std::cout << "  T for generating Matrix: ";
+		theObjects[0].GetSwCreateTMatrixD()->Print();
+		std::cout << "  T for generating TH2D: ";
+		theObjects[0].GetSwCreateTH2D()->Print();
+	}
 	
-	if (verbose > 0) {
+	if (verbose > 1) {
 	for (int i = 0; i < transformedPoints.size(); i++) {
 		std::cout << "transformedPoints[" << i << "].size() = " << transformedPoints[i].size() << std::endl;
 		for (int j = 0; j < transformedPoints[i].size(); j++) {

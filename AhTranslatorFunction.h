@@ -18,9 +18,9 @@ public:
 	
 	__device__ int operator() (const double &value) const {
 		float result = ((value - firstValue)/widthOfCell);
-		if (result > 31100 && result < 31200){
-			printf("DEBUG - result = %.8f = (%.8f - %.8f)/%.8f\n", result, value, firstValue, widthOfCell);
-		}
+//		if (result > 31100 && result < 31200){
+//			printf("DEBUG - result = %.8f = (%.8f - %.8f)/%.8f\n", result, value, firstValue, widthOfCell);
+//		}
 		return (int)result; //casting a double to an int doesnt work, with float it does, hooray
 	}
 

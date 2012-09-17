@@ -71,15 +71,19 @@ void AhTwoArraysToMatrix::DoTranslations()
 	if (fDoTiming == true) fSwTranslateValues = new TStopwatch();
 	thrust::device_vector<double> d_tempDummyX(fXValues.size());
  	thrust::device_vector<double> d_tempfXValues = fXValues;
+	
+	double inverseXStepWidth = 1/fXStepWidth;
 
- 	thrust::transform(d_tempfXValues.begin(), d_tempfXValues.end(), d_tempDummyX.begin(), AhTranslatorFunction(fXStepWidth, fXlow));
+ 	thrust::transform(d_tempfXValues.begin(), d_tempfXValues.end(), d_tempDummyX.begin(), AhTranslatorFunction(inverseXStepWidth, fXlow));
 	
  	fTranslatedXValues = d_tempDummyX;
 
 	thrust::device_vector<double> d_tempDummyY(fYValues.size());
  	thrust::device_vector<double> d_tempfYValues = fYValues;
+	
+	double inverseYStepWidth = 1/fYStepWidth;
 
- 	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(fYStepWidth, fYlow));
+ 	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(inverseYStepWidth, fYlow));
 	
  	fTranslatedYValues = d_tempDummyY;
 	

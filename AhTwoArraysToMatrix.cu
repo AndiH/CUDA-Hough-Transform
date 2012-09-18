@@ -4,7 +4,6 @@
 /* TODO
  * 
  * find out why old idea of functions doesnt work
- * tstopwatches
  * 
  * deliver two functions:
  * 	give translated value
@@ -69,44 +68,25 @@ bool AhTwoArraysToMatrix::DoBoundaryCheck() {
 void AhTwoArraysToMatrix::DoTranslations()
 {
 	if (fDoTiming == true) fSwTranslateValues = new TStopwatch();
-	thrust::device_vector<double> d_tempDummyX(fXValues.size());
- 	thrust::device_vector<double> d_tempfXValues = fXValues;
 	
-	double inverseXStepWidth = 1/fXStepWidth;
-
- 	thrust::transform(d_tempfXValues.begin(), d_tempfXValues.end(), d_tempDummyX.begin(), AhTranslatorFunction(inverseXStepWidth, fXlow));
-	
- 	fTranslatedXValues = d_tempDummyX;
-
-	thrust::device_vector<double> d_tempDummyY(fYValues.size());
- 	thrust::device_vector<double> d_tempfYValues = fYValues;
-	
-	double inverseYStepWidth = 1/fYStepWidth;
-
- 	thrust::transform(d_tempfYValues.begin(), d_tempfYValues.end(), d_tempDummyY.begin(), AhTranslatorFunction(inverseYStepWidth, fYlow));
-	
- 	fTranslatedYValues = d_tempDummyY;
+	fTranslatedXValues = TranslateValuesToMatrixCoordinates(fXValues, 1/fXStepWidth, fXlow);
+	fTranslatedYValues = TranslateValuesToMatrixCoordinates(fYValues, 1/fYStepWidth, fYlow);
 	
 	if (fDoTiming == true) fSwTranslateValues->Stop();
-	
- 	// 	fTranslatedXValues = TranslateValuesToMatrixCoordinates(tempVecX, fNBinsX, fMaxX); // ## TODO: IMPLEMENT FUNCTIONS FOR THIS
- 	// 	fTranslatedYValues = TranslateValuesToMatrixCoordinates(fYValues, fNBinsY, fMaxY);
-	
+
 	// ### DEBUG OUTPUT
 // 	for (int i = 0; i < fTranslatedXValues.size(); i++) {
 // 		std::cout << "(x,y)_" << i << " = (" << fXValues[i] << "," << fYValues[i] << ") --> (" << fTranslatedXValues[i] << "," << fTranslatedYValues[i] << ")" << std::endl;	
 // 	}
 }
 
-//thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinates (thrust::device_vector<double> values, int nOfPoints, double dimension) {
-// 	thrust::device_vector<int> tempVec(values.size());
-//
-// 	double widthOfCell = nOfPoints / dimension;
-//
-// 	thrust::transform(values.begin(), values.end(), tempVec.begin(), AhTranslatorFunction(widthOfCell));
-//
-// 	return tempVec;
-// }
+thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinates (const thrust::device_vector<double> &values, double inverseStepWidth, double lowValue) {
+	thrust::device_vector<int> tempVec(values.size());
+
+	thrust::transform(values.begin(), values.end(), tempVec.begin(), AhTranslatorFunction(inverseStepWidth, lowValue));
+
+	return tempVec;
+}
 
 void AhTwoArraysToMatrix::CalculateHistogram()
 {

@@ -19,17 +19,6 @@
 
 #include "TStopwatch.h"
 
-//struct AhTranslatorFunction {
-//	double widthOfCell;
-//	AhTranslatorFunction(double _widthOfCell) : widthOfCell(_widthOfCell) {}
-//
-//	__device__ int operator() (const double &value) {
-//		return value/widthOfCell; // maybe +1 has to be applied? check that and remember that
-//		// TODO: if returnValue == 0
-//		// TODO: negative values?
-//	}
-//};
-
 class AhTwoArraysToMatrix
 {
 public:
@@ -47,7 +36,7 @@ public:
 	void SetYlow(double _ylow) { fYlow = _ylow; };
 	void SetYup(double _yup) { fYup = _yup; };
 	
-	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (thrust::device_vector<double>, int, double);
+	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (const thrust::device_vector<double>&, double, double);
 	
  	bool DoBoundaryCheck();
  	void DoTranslations();
@@ -80,8 +69,8 @@ private:
 	bool fDoTiming;
 	thrust::host_vector<double> fXValues;
 	thrust::host_vector<double> fYValues;
-	thrust::device_vector<double> fTranslatedXValues;
-	thrust::device_vector<double> fTranslatedYValues;
+	thrust::device_vector<int> fTranslatedXValues;
+	thrust::device_vector<int> fTranslatedYValues;
 	int fNBinsX;
 	int fNBinsY;
 	double fXlow;

@@ -37,9 +37,11 @@ public:
 	void SetYup(double _yup) { fYup = _yup; };
 	
 	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (const thrust::device_vector<double>&, double, double);
+	thrust::device_vector<double> RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, double inverseStepWidth, double lowValue);
 	
  	bool DoBoundaryCheck();
  	void DoTranslations();
+	void DoRetranslations();
  	void CalculateHistogram();
 	
 	cusp::coo_matrix<int, double, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}
@@ -55,6 +57,8 @@ public:
 	thrust::device_vector<int> GetPlainYValues();
 	thrust::device_vector<double> GetMultiplicities();
 	thrust::device_vector<double> GetBinContent() { return GetMultiplicities(); };
+	thrust::device_vector<thrust::tuple<int, int, double> > GetPlainMatrixValues();
+	thrust::device_vector<thrust::tuple<double, double, double> > GetRetranslatedMatrixValues();
 	
 	TStopwatch * GetSwTranslateValues() { return fSwTranslateValues; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwHistSort() { return fSwHistSort; }; // breaks if fDoTiming is not set to true
@@ -71,6 +75,8 @@ private:
 	thrust::host_vector<double> fYValues;
 	thrust::device_vector<int> fTranslatedXValues;
 	thrust::device_vector<int> fTranslatedYValues;
+	thrust::device_vector<double> fRetranslatedXValues;
+	thrust::device_vector<double> fRetranslatedYValues;
 	int fNBinsX;
 	int fNBinsY;
 	double fXlow;
@@ -81,6 +87,8 @@ private:
 	
 	double fXStepWidth;
 	double fYStepWidth;
+	
+	bool fReTranslationHasBeenDone;
 	
 	TStopwatch * fSwTranslateValues;
 	TStopwatch * fSwHistSort;

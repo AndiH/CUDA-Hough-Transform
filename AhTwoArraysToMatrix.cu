@@ -25,7 +25,8 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
   fXup(xup),
   fYlow(ylow),
   fYup(yup),
-  fDoTiming(doTiming)
+  fDoTiming(doTiming),
+  fReTranslationHasBeenDone(false)
 {
 	bool dontbreak = true;
 
@@ -41,6 +42,7 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
 	} else {
 		std::cout << "Did nothing due to some error." << std::endl;
 	}
+	
 }
 
 
@@ -88,6 +90,14 @@ thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinat
 	return tempVec;
 }
 
+thrust::device_vector<double> AhTwoArraysToMatrix::RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, double inverseStepWidth, double lowValue) {
+	thrust::device_vector<double> tempVec(values.size());
+	
+	thrust::transform(values.begin(), values.end(), tempVec.begin(), AhTranslatorFunction(inverseStepWidth, lowValue)); // uses operator for INTs (which is the retranslation operator)
+	
+	return tempVec;
+}
+
 void AhTwoArraysToMatrix::CalculateHistogram()
 {
 	thrust::device_vector<int> weightVector(fTranslatedXValues.size(), 1); // just dummy -- each cell should have weight of 1 // TODO: This, once, of course can be changed to support different weightes
@@ -99,11 +109,43 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	
 	if (fDoTiming == true) fSwHistSort = new TStopwatch();
 	// sort triplets by (i,j) index using two stable sorts (first by J, then by I)
-	thrust::stable_sort_by_key(J.begin(), J.end(), thrust::make_zip_iterator(thrust::make_tuple(I.begin(), V.begin())));
-	thrust::stable_sort_by_key(I.begin(), I.end(), thrust::make_zip_iterator(thrust::make_tuple(J.begin(), V.begin())));
+	/** The Trick (of following line):
+	 * 
+	 * Generally speaking, sort_by_key sorts a vector A in ascending order, while also putting the corresponding (paired) element of a second vector B into the new position -- leading to vector A being sorted after your wish and a vector B, of which each element is 'chained' to the original one in A in therefore being sorted the way A is.
+	 * 
+	 * stable_sort_by_key will preserve the original order if two (or more) elements are equal (this is not important for this case, I guess)
+	 * 
+	 * So, in the first example
+	 * 	J is sorted by 'operator<'
+	 * 	At the same time the tuple of (I,V) is put in J's order
+	 * 
+	 * The second example sorts I, so that in the end I and J are both sorted ascending
+	 * 
+	 * Further read: http://docs.thrust.googlecode.com/hg/group__sorting.html#ga2bb765aeef19f6a04ca8b8ba11efff24
+	 */
+	thrust::stable_sort_by_key(
+		J.begin(), 
+		J.end(), 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				I.begin(), 
+				V.begin()
+			)
+		)
+	);
+	thrust::stable_sort_by_key(
+		I.begin(), 
+		I.end(), 
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				J.begin(), 
+				V.begin()
+			)
+		)
+	);
 	if (fDoTiming == true) fSwHistSort->Stop();
 	
-     // compute unique number of nonzeros in the output
+	// compute unique number of nonzeros in the output
 	int num_entries = thrust::inner_product(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(I.begin(), J.begin())
@@ -123,7 +165,17 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	cusp::coo_matrix<int, double, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
 	
 	if (fDoTiming == true) fSwHistSum = new TStopwatch();
+	
 	// sum values with the same (i,j) index
+	/** The Trick (of the following line):
+	 * reduce_by_key sums up values V(I,J), if two (three...n-2) consecutive key_parameters (=tuples) (I_0..n,J_0..n) are equal
+	 * if so, the matching key_tuples (I_0,J_0) are put into the fourth argument (==matrix indices) and the summed up values of V(I_0..n,J_0..n) are put into the fifth argument (==matrix values).
+	 * 
+	 * equalness (equality?) is tested by invoking the second-to-last argument,
+	 * reduction is done by invoking th elast argument
+	 * 
+	 * See this example for clarification: http://docs.thrust.googlecode.com/hg/group__reductions.html#ga633d78d4cb2650624ec354c9abd0c97f
+	 */
 	thrust::reduce_by_key(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(I.begin(), J.begin())
@@ -134,8 +186,8 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 		V.begin(), 
 		thrust::make_zip_iterator(
 			thrust::make_tuple(A.row_indices.begin(), A.column_indices.begin())
-		), 
-		A.values.begin(), 
+		), // TODO: maybe it makes sense to put a tuple of vectors in here? investigate for performance
+		A.values.begin(), // TODO: maybe it makes sense to put a plain vector in here? then combine this one and the tuple from the line above into a matrix
 		thrust::equal_to< thrust::tuple<int,int> >(), 
 		thrust::plus<double>()
 	);
@@ -181,6 +233,67 @@ TH2D * AhTwoArraysToMatrix::GetHistogram()
 	if (fDoTiming == true) fSwCreateTH2D->Stop();
 	
 	return tempHisto;
+}
+
+/**
+ * @brief Return all important values of constructed matrix in a list-like fashion
+ * @return A device vector of a thrust::tuple with x-value (int), y-value (int) and the multiplicity of that bin (double)
+ * 
+ * Example access: thrust::get<0>(this->GetPlainMatrixValues()[0])
+ */
+thrust::device_vector<thrust::tuple<int, int, double> > AhTwoArraysToMatrix::GetPlainMatrixValues()
+{
+	thrust::device_vector< thrust::tuple<int, int, double> > allStuff(
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fCUSPMatrix.row_indices.begin(), 
+				fCUSPMatrix.column_indices.begin(),
+				fCUSPMatrix.values.begin()
+			)
+		),
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fCUSPMatrix.row_indices.end(),
+				fCUSPMatrix.column_indices.end(),
+				fCUSPMatrix.values.end()
+			)
+		)
+	);
+	return allStuff;
+}
+
+void AhTwoArraysToMatrix::DoRetranslations()
+{
+	fRetranslatedXValues = RetranslateValuesFromMatrixCoordinates(CuspVectorToDeviceVector(fCUSPMatrix.row_indices), 1/fXStepWidth, fXlow);
+	fRetranslatedYValues = RetranslateValuesFromMatrixCoordinates(CuspVectorToDeviceVector(fCUSPMatrix.column_indices), 1/fYStepWidth, fYlow);
+}
+
+thrust::device_vector<thrust::tuple<double, double, double> > AhTwoArraysToMatrix::GetRetranslatedMatrixValues()
+{
+	// First off, translate I and J from matrix int space into real double space
+	if (fReTranslationHasBeenDone == false) {
+		DoRetranslations();
+		fReTranslationHasBeenDone = true;
+	}
+	
+	// make dev vec tuple construct
+	thrust::device_vector< thrust::tuple<double, double, double> > allStuff(
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fRetranslatedXValues.begin(), 
+				fRetranslatedYValues.begin(),
+				fCUSPMatrix.values.begin()
+			)
+		),
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fRetranslatedXValues.end(),
+				fRetranslatedYValues.end(),
+				fCUSPMatrix.values.end()
+			)
+		)
+	);
+	return allStuff;
 }
 
 template <class T>

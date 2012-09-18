@@ -16,12 +16,13 @@ public:
 	AhTranslatorFunction(double _inverseWidthOfCell, double _firstValue) : inverseWidthOfCell(_inverseWidthOfCell),
 	firstValue(_firstValue) {};
 	
-	__device__ int operator() (const double &value) const {
+	// Overloaded operators, see each description
+	__device__ int operator() (const double &value) const { //< operator to translate from continuous double space into matrix suitable int space
 		return ((value - firstValue) * inverseWidthOfCell);
-//		if (result > 31100 && result < 31200){
-//			printf("DEBUG - result = %.8f = (%.8f - %.8f)/%.8f\n", result, value, firstValue, inverseWidthOfCell);
-//		}
-// 		return (int)result; //casting a double to an int doesnt work, with float it does, hooray
+	}
+	
+	__device__ double operator() (const int &value) const { //< opoerator to REtranslate ready-calculated integer matrix values into old-bordered double space
+		return ((value + firstValue) / inverseWidthOfCell);
 	}
 
 private:

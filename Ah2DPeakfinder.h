@@ -15,6 +15,7 @@
 #include <thrust/tuple.h>
 #include <thrust/count.h>
 #include <thrust/copy.h>
+#include <thrust/sort.h>
 #include <thrust/iterator/constant_iterator.h>
 
 //#include "cuPrintf.cuh"
@@ -34,6 +35,7 @@ struct returnElementOfTuple : public thrust::binary_function<InputType, int, Ret
 	}
 };
 
+// make a template out of it to get a proper comparison at return line?
 struct isGreaterThan { // there's a Thrust version for this: http://docs.thrust.googlecode.com/hg/structthrust_1_1greater__equal.html - maybe implement this here as a wrapper?
 	isGreaterThan(int _cutOff) : cutOff(_cutOff) {};
 	__device__ bool operator() (const double x) const {
@@ -58,8 +60,9 @@ public:
 	thrust::device_vector<double> GetMultiplicities() { return fValues; };
 
 protected:
-	void DoCutOff();
 	void DoEverything();
+	void DoCutOff();
+	void DoSortByMultiplicity();
 
 private:
 	thrust::device_vector<int> fX;

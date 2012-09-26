@@ -34,20 +34,10 @@ Ah2DPeakfinder::Ah2DPeakfinder(thrust::device_vector<thrust::tuple<int, int, dou
 	thrust::transform(data.begin(), data.end(), thrust::make_constant_iterator(1), yData.begin(), returnElementOfTuple<default_tuple, int>());
 	thrust::transform(data.begin(), data.end(), thrust::make_constant_iterator(2), valueData.begin(), returnElementOfTuple<default_tuple, double>());
 
-//	std::cout << "DEBUG: " << std::endl;
-//	for (int i = 0; i < xData.size(); i++) std::cout << "  xData[" << i << "] = " << xData[i] << std::endl;
-//	for (int i = 0; i < yData.size(); i++) std::cout << "  yData[" << i << "] = " << yData[i] << std::endl;
-//	for (int i = 0; i < valueData.size(); i++) std::cout << "  valueData[" << i << "] = " << valueData[i] << std::endl;
-
 	fX = xData;
 	fY = yData;
 	fValues = valueData;
-
-//	std::cout << "fValues.size(): " << fValues.size() << std::endl;
-
 	DoEverything();
-
-//	std::cout << "fValues.size(): " << fValues.size() << std::endl;
 }
 
 Ah2DPeakfinder::Ah2DPeakfinder(thrust::device_vector<int> x, thrust::device_vector<int> y, thrust::device_vector<double> values, int cutOff) :
@@ -56,18 +46,7 @@ Ah2DPeakfinder::Ah2DPeakfinder(thrust::device_vector<int> x, thrust::device_vect
 		fValues(values),
 		fCutOff(cutOff)
 {
-//	std::cout << "fValues.size(): " << fValues.size() << std::endl;
-//	std::cout << "DEBUG2: " << std::endl;
-//	for (int i = 0; i < fX.size(); i++) std::cout << "  fX[" << i << "] = " << fX[i] << std::endl;
-//	for (int i = 0; i < fY.size(); i++) std::cout << "  fY[" << i << "] = " << fY[i] << std::endl;
-//	for (int i = 0; i < fValues.size(); i++) std::cout << "  fValues[" << i << "] = " << fValues[i] << std::endl;
-
 	DoEverything();
-
-//	std::cout << "DEBUG4: " << std::endl;
-//	for (int i = 0; i < fX.size(); i++) std::cout << "  fX[" << i << "] = " << fX[i] << std::endl;
-//	for (int i = 0; i < fY.size(); i++) std::cout << "  fY[" << i << "] = " << fY[i] << std::endl;
-//	for (int i = 0; i < fValues.size(); i++) std::cout << "  fValues[" << i << "] = " << fValues[i] << std::endl;
 }
 
 
@@ -77,6 +56,7 @@ Ah2DPeakfinder::~Ah2DPeakfinder()
 void Ah2DPeakfinder::DoEverything() {
 	// Called by different constructors
 	if (fCutOff > 0) DoCutOff();
+	DoSortByMultiplicity();
 }
 
 void Ah2DPeakfinder::DoCutOff()
@@ -87,7 +67,7 @@ void Ah2DPeakfinder::DoCutOff()
 
 	// Count number of elements over threshold to create equally sized new vectors to be copied into
 	int nElementsOverCut = thrust::count_if(fValues.begin(), fValues.end(), isGreaterThan(fCutOff-1)); // -1: isGreaterThan --> isGreatherEqualThan
-//	std::cout << "Ah2DPeakFinder::DoCutOff() -- nElementsOverCut = " << nElementsOverCut << std::endl;
+
 	// create new vectors
 	thrust::device_vector<int> newX(nElementsOverCut);
 	thrust::device_vector<int> newY(nElementsOverCut);
@@ -106,13 +86,32 @@ void Ah2DPeakfinder::DoCutOff()
 	// Well, this should be clear
 	fX = newX;
 	fY = newY;
-	thrust::copy(newValues.begin(), newValues.end(), fValues.begin());
-//	fValues = newValues;
+//	thrust::copy(newValues.begin(), newValues.end(), fValues.begin());
+	fValues = newValues;
 
-//	std::cout << "DEBUG3: " << std::endl;
-//	for (int i = 0; i < fX.size(); i++) std::cout << "  fX[" << i << "] = " << fX[i] << std::endl;
-//	for (int i = 0; i < fY.size(); i++) std::cout << "  fY[" << i << "] = " << fY[i] << std::endl;
-//	for (int i = 0; i < fValues.size(); i++) std::cout << "  fValues[" << i << "] = " << fValues[i] << std::endl;
+}
 
+void Ah2DPeakfinder::DoSortByMultiplicity()
+{
+	std::cout << "DEBUG - Ah2DPeakfinder::DoSortByMultiplicity" << std::endl;
+	for (int i = 0; i < fValues.size(); i++) {
+		std::cout << "  fValues[" << i << "] = " << fValues[i] << ", fX[" << i << "] = " << fX[i] << ", fY[" << i << "] = " << fY[i] << std::endl;
+	}
 
+	thrust::stable_sort_by_key(
+		fValues.begin(),
+		fValues.end(),
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fX.begin(),
+				fY.begin()
+			)
+		),
+		thrust::greater<int>() // usually here would be a <double> to be able to support double weights, but this doesnt work for some reason - postponed
+	);
+
+	for (int i = 0; i < fValues.size(); i++) {
+		std::cout << "  fValues[" << i << "] = " << fValues[i] << ", fX[" << i << "] = " << fX[i] << ", fY[" << i << "] = " << fY[i] << std::endl;
+	}
+	std::cout << "DEBUG - Ah2DPeakfinder::DoSortByMultiplicity - have been here" << std::endl;
 }

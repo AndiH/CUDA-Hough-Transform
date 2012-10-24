@@ -5,24 +5,26 @@
 # LIBS   = $(shell root-config --libs)
 # GLIBS  = $(shell root-config --glibs)
 # GLIBS  += -lMinuit
+ROOTCFLAGS := -I$(shell root-config --incdir)
+ROOTCFLAGS += -m64
 
-PATHTOROOT = /home/herten/fairsoft/extpkg/tools/root
-PATHTOCUSP = /private/herten/
+ROOTLIBS := -L$(shell root-config --libdir)
+ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lm -ldl -lMinuit -lGui
 
-ROOTLIBS := -m64 -I$(PATHTOROOT)/include -L$(PATHTOROOT)/lib -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lm -ldl -L$(PATHTOROOT)/lib -lGui -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lm -ldl -lMinuit
+PATHTOCUSP = /Applications/Panda/CUDA/
 
 OBJECTS = houghtransform.o AhTwoArraysToMatrix.o AhTranslatorFunction.o 
 
 all:	hough
 
 houghtransform.o:	houghtransform.cu
-	nvcc -arch=sm_20 $(ROOTLIBS) -I$(PATHTOCUSP) -c houghtransform.cu
+	nvcc -arch=sm_20 $(ROOTCFLAGS) $(ROOTLIBS) -I$(PATHTOCUSP) -c houghtransform.cu
 
 AhTwoArraysToMatrix.o:	AhTwoArraysToMatrix.cu AhTwoArraysToMatrix.h AhTranslatorFunction.h
-	nvcc -arch=sm_20 $(ROOTLIBS) -I$(PATHTOCUSP) -c AhTwoArraysToMatrix.cu
+	nvcc -arch=sm_20 $(ROOTCFLAGS) $(ROOTLIBS) -I$(PATHTOCUSP) -c AhTwoArraysToMatrix.cu
 
 %.o:	%.cu %.h 
-	nvcc -arch=sm_20 $(ROOTLIBS) -I$(PATHTOCUSP) -c $<
+	nvcc -arch=sm_20 $(ROOTCFLAGS) $(ROOTLIBS) -I$(PATHTOCUSP) -c $<
 
 hough:	$(OBJECTS)
-	nvcc -arch=sm_20 $(ROOTLIBS) -I$(PATHTOCUSP) -o $@ $(OBJECTS) 
+	nvcc -arch=sm_20 $(ROOTCFLAGS) $(ROOTLIBS) -I$(PATHTOCUSP) -o $@ $(OBJECTS) 

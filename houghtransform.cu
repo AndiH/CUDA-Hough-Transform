@@ -142,14 +142,14 @@ int main (int argc, char** argv) {
 //	x.push_back(-24.3888); y.push_back(-5.49439);
 //	x.push_back(-29.8641); y.push_back(-2.8527);
 
-//	x.push_back(-0.287274); y.push_back(-1.668553); // MVD POINT EVENT 1
-//	x.push_back(-0.378530); y.push_back(-2.244961); // MVD POINT EVENT 1
-//	x.push_back(-0.557000); y.push_back(-3.422990); // MVD POINT EVENT 1
-//	x.push_back(-0.763607); y.push_back(-4.893884); // MVD POINT EVENT 1
-//	x.push_back(1.3155927); y.push_back(-1.276497); // MVD POINT EVENT 1
-//	x.push_back(1.7415385); y.push_back(-1.742629); // MVD POINT EVENT 1
-//	x.push_back(2.5251355); y.push_back(-2.654892); // MVD POINT EVENT 1
-//	x.push_back(3.6173491); y.push_back(-4.050041); // MVD POINT EVENT 1
+	x.push_back(-0.287274); y.push_back(-1.668553); // MVD POINT EVENT 1
+	x.push_back(-0.378530); y.push_back(-2.244961); // MVD POINT EVENT 1
+	x.push_back(-0.557000); y.push_back(-3.422990); // MVD POINT EVENT 1
+	x.push_back(-0.763607); y.push_back(-4.893884); // MVD POINT EVENT 1
+	x.push_back(1.3155927); y.push_back(-1.276497); // MVD POINT EVENT 1
+	x.push_back(1.7415385); y.push_back(-1.742629); // MVD POINT EVENT 1
+	x.push_back(2.5251355); y.push_back(-2.654892); // MVD POINT EVENT 1
+	x.push_back(3.6173491); y.push_back(-4.050041); // MVD POINT EVENT 1
 
 	x.push_back(8.6005649); y.push_back(-14.18077); // STT POINT EVENT 2
 	x.push_back(8.8446016); y.push_back(-15.12664); // STT POINT EVENT 2
@@ -255,7 +255,8 @@ int main (int argc, char** argv) {
 	 */
 	double everyXDegrees = 30; //!< make a point every X degrees of alpha
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
-	thrust::host_vector<double> alphas(360/everyXDegrees); //!< create host vector with enough space for 360/everyXDegrees elements
+	double maxAngle = 180;
+	thrust::host_vector<double> alphas(maxAngle/everyXDegrees); //!< create host vector with enough space for maxAngle/everyXDegrees elements
 	thrust::sequence(alphas.begin(), alphas.end(), 0., everyXDegrees); //!< fill the just created vector with alphas -- this vector is the basis for the hough transformation
 	if (verbose > 1) {
 		for (int i = 0; i < alphas.size(); i++) {
@@ -263,7 +264,7 @@ int main (int argc, char** argv) {
 		}
 	}
 	
-	std::vector<thrust::host_vector<double> > transformedPoints; //!< create empty vector for all the hough transformed points, has size of: x.size() * 360/everyXDegrees
+	std::vector<thrust::host_vector<double> > transformedPoints; //!< create empty vector for all the hough transformed points, has size of: x.size() * maxAngle/everyXDegrees
 	
 	for (int i = 0; i < mappedData.size(); i++) { //!< ON HOST! loop over all (conf mapped) data points
 		thrust::device_vector<double> d_tempAlphas = alphas;
@@ -297,14 +298,14 @@ int main (int argc, char** argv) {
 	/*
 	 * ### Make CUSP Matrix ###
 	 */
-	int nBinsX = (int) 360/everyXDegrees;
+	int nBinsX = (int) maxAngle/everyXDegrees;
 	double minValueX = 0;
-	double maxValueX = 360;
+	double maxValueX = maxAngle;
 	if (verbose > 0) std::cout << "nBinsX = " << nBinsX << ", minValueX = " << minValueX << " ,maxValueX = " << maxValueX << std::endl;
 
-	int nBinsY = 360/everyXDegrees;
-	double minValueY = -0.07;
-	double maxValueY = 0.07;
+	int nBinsY = maxAngle/everyXDegrees;
+	double minValueY = -0.6;
+	double maxValueY = 0.6;
 	if (verbose > 0) std::cout << "nBinsY = " << nBinsY << ", minValueY = " << minValueY << ", maxValueY " << maxValueY << std::endl;
 	// ALTERNATIVE DEFINITION OF M**VALUEY: using automated mins and maxes
 //	double minValueY = transformedPoints[0][0];
@@ -411,17 +412,8 @@ int main (int argc, char** argv) {
 	/*
 	 * 
 	 * ### TODO ###
-	 * create matrix from point
-	 * 	use cusp & cusp example: http://code.google.com/p/cusp-library/source/browse/examples/MatrixAssembly/unordered_triplets.cu
-	 * 	V[n] = 1
-	 * 	calculate I[n] & J[n] due to resolution of matrix grid
-	 * 	TESTCODE
-	 * 		int anzahlderpunkte = 6;
-	 * 		int gesamtbreite = 3;
-	 * 		double zellenbreite = gesamtbreite / anzahlderpunkte;
-	 * 		double testZahl = 2.6; // muss in die zelle #3 (1 --> 1,5)
-	 * 		int testZahlMussInZelle = (int) (testZahl/zellenbreite);
-	 * 
+	 * Get Matrix min max automatically
+	 * MAKE CLASS OF THAT
 	 * 
 	 * 
 	 * make peak finder

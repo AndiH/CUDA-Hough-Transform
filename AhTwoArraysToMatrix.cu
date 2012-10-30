@@ -30,9 +30,6 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
 {
 	bool dontbreak = true;
 
-	std::cout << "xValues type is = " << typeid(xValues).name() << std::endl;
-	std::cout << "fXvalue type is = " << typeid(fXValues).name() << std::endl;
-
 	fXStepWidth = (fXup - fXlow)/(fNBinsX);
 	fYStepWidth = (fYup - fYlow)/(fNBinsY);
 	

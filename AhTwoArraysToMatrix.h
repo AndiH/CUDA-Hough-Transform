@@ -1,8 +1,6 @@
 #ifndef TWOARRAYSTOMATRIX_H
 #define TWOARRAYSTOMATRIX_H
 
-#include <typeinfo>
-
 #include <cusp/coo_matrix.h>
 #include <cusp/print.h>
 

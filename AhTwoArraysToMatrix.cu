@@ -30,6 +30,9 @@ AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, th
 {
 	bool dontbreak = true;
 
+	std::cout << "xValues type is = " << typeid(xValues).name() << std::endl;
+	std::cout << "fXvalue type is = " << typeid(fXValues).name() << std::endl;
+
 	fXStepWidth = (fXup - fXlow)/(fNBinsX);
 	fYStepWidth = (fYup - fYlow)/(fNBinsY);
 	
@@ -275,7 +278,7 @@ TH2D * AhTwoArraysToMatrix::GetHistogram()
 	TH2D * tempHisto = new TH2D(GetTMatrixD());
 	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
 	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
-	
+
 	if (true == fDoTiming) fSwCreateTH2D->Stop();
 	
 	return tempHisto;

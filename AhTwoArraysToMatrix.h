@@ -1,6 +1,8 @@
 #ifndef TWOARRAYSTOMATRIX_H
 #define TWOARRAYSTOMATRIX_H
 
+#include <typeinfo>
+
 #include <cusp/coo_matrix.h>
 #include <cusp/print.h>
 
@@ -67,6 +69,7 @@ public:
 	double GetTimeCreateTH2D() { return fSwCreateTH2D->CpuTime(); }; // in SECONDS
 
 protected:
+	// Not used, just kept here for ... well... I don't know for what
 	TStopwatch * GetSwTranslateValues() { return fSwTranslateValues; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwHistSort() { return fSwHistSort; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwHistSum() { return fSwHistSum; }; // breaks if fDoTiming is not set to true
@@ -78,8 +81,8 @@ private:
 	thrust::device_vector<T> CuspVectorToDeviceVector(const cusp::array1d<T, cusp::device_memory> &cuspvec);
 	
 	bool fDoTiming;
-	thrust::host_vector<double> fXValues;
-	thrust::host_vector<double> fYValues;
+	thrust::device_vector<double> fXValues;
+	thrust::device_vector<double> fYValues;
 	thrust::device_vector<int> fTranslatedXValues;
 	thrust::device_vector<int> fTranslatedYValues;
 	thrust::device_vector<double> fRetranslatedXValues;
@@ -105,7 +108,7 @@ private:
 	TStopwatch * fSwCreateTH2D;
 
 	cudaEvent_t start, stop;
-	float fTimeTranslateValues = 0;
+	float fTimeTranslateValues;
 	float fTimeHistSort;
 	float fTimeHistSum;
 	

@@ -245,14 +245,7 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 
 TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
-	if (true == fDoTiming) {
-		fSwCreateTMatrixD = new TStopwatch(); // old
-
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
-		cudaThreadSynchronize();
-		cudaEventRecord(start, 0);
-	}
+	if (true == fDoTiming) fSwCreateTMatrixD = new TStopwatch();
 	TMatrixD myMatrix(fNBinsY, fNBinsX);
 //	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
 //	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
@@ -269,15 +262,7 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 //			std::cout << "matrix element not filled" << std::endl;
 		}
 	}
-	if (true == fDoTiming) {
-		fSwCreateTMatrixD->Stop(); // old
-
-		cudaEventRecord(stop, 0);
-		cudaEventSynchronize(stop);
-		cudaEventElapsedTime(&fTimeCreateTMatrixD, start, stop);
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
-	} 
+	if (true == fDoTiming) fSwCreateTMatrixD->Stop();
 	
 	return myMatrix;
 }
@@ -285,27 +270,13 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 TH2D * AhTwoArraysToMatrix::GetHistogram()
 {
 	// Gives a pointer to a TH2D histogram with proper, re-translated boundaries
-	if (true == fDoTiming) {
-		fSwCreateTH2D = new TStopwatch(); // old
-
-		cudaEventCreate(&start);
-		cudaEventCreate(&stop);
-		cudaThreadSynchronize();
-		cudaEventRecord(start, 0);
-	}
+	if (true == fDoTiming) fSwCreateTH2D = new TStopwatch();
 
 	TH2D * tempHisto = new TH2D(GetTMatrixD());
 	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
 	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
-	if (true == fDoTiming) {
-		fSwCreateTH2D->Stop();
-
-		cudaEventRecord(stop, 0);
-		cudaEventSynchronize(stop);
-		cudaEventElapsedTime(&fTimeCreateTH2D, start, stop);
-		cudaEventDestroy(start);
-		cudaEventDestroy(stop);
-	}
+	
+	if (true == fDoTiming) fSwCreateTH2D->Stop();
 	
 	return tempHisto;
 }

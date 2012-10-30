@@ -355,16 +355,21 @@ int main (int argc, char** argv) {
 
 	if (verbose > 0) { // Timings
 		for (int i = 0; i < theObjects.size(); i++) {
-			std::cout << "Timings for histogram " << i <<": "<< std::endl;
+			std::cout << "Timings for histogram " << i <<": (always GPU-times/msec vs. CPU-timed/sec)"<< std::endl;
 			std::cout << "  T for translating values: ";
+			std::cout << theObjects[i].GetTimeTranslateValues() << " vs. ";
 			theObjects[i].GetSwTranslateValues()->Print();
 			std::cout << "  T for sorting histogram vectors: ";
+			std::cout << theObjects[i].GetTimeHistSort() << " vs. ";
 			theObjects[i].GetSwHistSort()->Print();
 			std::cout << "  T for summing histogram vectors: ";
+			std::cout << theObjects[i].GetTimeHistSum() << " vs. ";
 			theObjects[i].GetSwHistSum()->Print();
 			std::cout << "  T for generating Matrix: ";
+			std::cout << theObjects[i].GetTimeCreateTMatrixD() << " vs. ";
 			theObjects[i].GetSwCreateTMatrixD()->Print();
 			std::cout << "  T for generating TH2D: ";
+			std::cout << theObjects[i].GetTimeCreateTH2D() << " vs. ";
 			theObjects[i].GetSwCreateTH2D()->Print();
 		}
 	}

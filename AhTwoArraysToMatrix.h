@@ -59,18 +59,19 @@ public:
 	thrust::device_vector<double> GetBinContent() { return GetMultiplicities(); };
 	thrust::device_vector<thrust::tuple<int, int, double> > GetPlainMatrixValues();
 	thrust::device_vector<thrust::tuple<double, double, double> > GetRetranslatedMatrixValues();
-	
+
+	double GetTimeTranslateValues() { return fTimeTranslateValues; }; // in MILLI seconds, see http://developer.download.nvidia.com/compute/cuda/4_2/rel/toolkit/docs/online/group__CUDART__EVENT_g14c387cc57ce2e328f6669854e6020a5.html
+	double GetTimeHistSort() { return fTimeHistSort; }; // in MILLI seconds
+	double GetTimeHistSum() { return fTimeHistSum; }; // in MILLI seconds
+	double GetTimeCreateTMatrixD() { return fSwCreateTMatrixD->CpuTime(); }; // in SECONDS
+	double GetTimeCreateTH2D() { return fSwCreateTH2D->CpuTime(); }; // in SECONDS
+
+protected:
 	TStopwatch * GetSwTranslateValues() { return fSwTranslateValues; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwHistSort() { return fSwHistSort; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwHistSum() { return fSwHistSum; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwCreateTMatrixD() { return fSwCreateTMatrixD; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwCreateTH2D() { return fSwCreateTH2D; }; // breaks if fDoTiming is not set to true
-
-	double GetTimeTranslateValues() { return fTimeTranslateValues; };
-	double GetTimeHistSort() { return fTimeHistSort; };
-	double GetTimeHistSum() { return fTimeHistSum; };
-	double GetTimeCreateTMatrixD() { return fTimeCreateTMatrixD; };
-	double GetTimeCreateTH2D() { return fTimeCreateTH2D; };
 	
 private:
 	template <class T>
@@ -104,11 +105,9 @@ private:
 	TStopwatch * fSwCreateTH2D;
 
 	cudaEvent_t start, stop;
-	float fTimeTranslateValues;
+	float fTimeTranslateValues = 0;
 	float fTimeHistSort;
 	float fTimeHistSum;
-	float fTimeCreateTMatrixD;
-	float fTimeCreateTH2D;
 	
 	cusp::array1d<int, cusp::device_memory> fI;
 	cusp::array1d<int, cusp::device_memory> fJ;

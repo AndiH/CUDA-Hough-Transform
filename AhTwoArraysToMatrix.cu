@@ -69,12 +69,28 @@ bool AhTwoArraysToMatrix::DoBoundaryCheck() {
 
 void AhTwoArraysToMatrix::DoTranslations()
 {
-	if (fDoTiming == true) fSwTranslateValues = new TStopwatch();
+	if (true == fDoTiming) {
+		fSwTranslateValues = new TStopwatch(); // Old version with TStopwatch, kept for backwards compability
+		
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaThreadSynchronize(); // make sure everything is ready
+		cudaEventRecord(start, 0); // create start point
+	}
 	
 	fTranslatedXValues = TranslateValuesToMatrixCoordinates(fXValues, 1/fXStepWidth, fXlow);
 	fTranslatedYValues = TranslateValuesToMatrixCoordinates(fYValues, 1/fYStepWidth, fYlow);
 	
-	if (fDoTiming == true) fSwTranslateValues->Stop();
+	if (true == fDoTiming) {
+		fSwTranslateValues->Stop(); // Old
+		cudaThreadSynchronize();
+		
+		cudaEventRecord(stop, 0); // create stop point
+		cudaEventSynchronize(stop); // wait for stop to finish
+		cudaEventElapsedTime(&fTimeTranslateValues, start, stop); // in mili seconds
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+	}
 
 	// ### DEBUG OUTPUT
 // 	for (int i = 0; i < fTranslatedXValues.size(); i++) {
@@ -107,7 +123,14 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	cusp::array1d<int, cusp::device_memory> J(fTranslatedYValues.begin(), fTranslatedYValues.end());  // column indices
 	cusp::array1d<double, cusp::device_memory> V(weightVector.begin(), weightVector.end());  // values
 	
-	if (fDoTiming == true) fSwHistSort = new TStopwatch();
+	if (true == fDoTiming) {
+		fSwHistSort = new TStopwatch(); // old
+
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaThreadSynchronize();
+		cudaEventRecord(start, 0);
+	}
 	// sort triplets by (i,j) index using two stable sorts (first by J, then by I)
 	/** The Trick (of following line):
 	 * 
@@ -143,8 +166,15 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 			)
 		)
 	);
-	if (fDoTiming == true) fSwHistSort->Stop();
-	
+	if (true == fDoTiming) {
+		fSwHistSort->Stop(); // old
+
+		cudaEventRecord(stop, 0);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&fTimeHistSort, start, stop);
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+	}
 	// compute unique number of nonzeros in the output
 	int num_entries = thrust::inner_product(
 		thrust::make_zip_iterator(
@@ -164,8 +194,14 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	// allocate output matrix
 	cusp::coo_matrix<int, double, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
 	
-	if (fDoTiming == true) fSwHistSum = new TStopwatch();
-	
+	if (true == fDoTiming) {
+		fSwHistSum = new TStopwatch(); // old
+
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaThreadSynchronize();
+		cudaEventRecord(start, 0);
+	} 
 	// sum values with the same (i,j) index
 	/** The Trick (of the following line):
 	 * reduce_by_key sums up values V(I,J), if two (three...n-2) consecutive key_parameters (=tuples) (I_0..n,J_0..n) are equal
@@ -191,7 +227,15 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 		thrust::equal_to< thrust::tuple<int,int> >(), 
 		thrust::plus<double>()
 	);
-	if (fDoTiming == true) fSwHistSum->Stop();
+	if (true == fDoTiming) {
+		fSwHistSum->Stop(); // old
+
+		cudaEventRecord(stop, 0);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&fTimeHistSum, start, stop);
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+	} 
 	
 	fCUSPMatrix = A;
 	fI = I;
@@ -201,7 +245,14 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 
 TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 {
-	if (fDoTiming == true) fSwCreateTMatrixD = new TStopwatch();
+	if (true == fDoTiming) {
+		fSwCreateTMatrixD = new TStopwatch(); // old
+
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaThreadSynchronize();
+		cudaEventRecord(start, 0);
+	}
 	TMatrixD myMatrix(fNBinsY, fNBinsX);
 //	std::cout << myMatrix.GetRowUpb() << " "<< myMatrix.GetColUpb() << std::endl;
 //	std::cout << fCUSPMatrix.num_rows << " " << fCUSPMatrix.num_cols << std::endl;
@@ -218,7 +269,15 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 //			std::cout << "matrix element not filled" << std::endl;
 		}
 	}
-	if (fDoTiming == true) fSwCreateTMatrixD->Stop();
+	if (true == fDoTiming) {
+		fSwCreateTMatrixD->Stop(); // old
+
+		cudaEventRecord(stop, 0);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&fTimeCreateTMatrixD, start, stop);
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+	} 
 	
 	return myMatrix;
 }
@@ -226,11 +285,27 @@ TMatrixD AhTwoArraysToMatrix::GetTMatrixD()
 TH2D * AhTwoArraysToMatrix::GetHistogram()
 {
 	// Gives a pointer to a TH2D histogram with proper, re-translated boundaries
-	if (fDoTiming == true) fSwCreateTH2D = new TStopwatch();
+	if (true == fDoTiming) {
+		fSwCreateTH2D = new TStopwatch(); // old
+
+		cudaEventCreate(&start);
+		cudaEventCreate(&stop);
+		cudaThreadSynchronize();
+		cudaEventRecord(start, 0);
+	}
+
 	TH2D * tempHisto = new TH2D(GetTMatrixD());
 	tempHisto->GetXaxis()->SetLimits(fXlow, fXlow + fNBinsX * fXStepWidth);
 	tempHisto->GetYaxis()->SetLimits(fYlow, fYlow + fNBinsY * fYStepWidth);
-	if (fDoTiming == true) fSwCreateTH2D->Stop();
+	if (true == fDoTiming) {
+		fSwCreateTH2D->Stop();
+
+		cudaEventRecord(stop, 0);
+		cudaEventSynchronize(stop);
+		cudaEventElapsedTime(&fTimeCreateTH2D, start, stop);
+		cudaEventDestroy(start);
+		cudaEventDestroy(stop);
+	}
 	
 	return tempHisto;
 }
@@ -271,7 +346,7 @@ void AhTwoArraysToMatrix::DoRetranslations()
 thrust::device_vector<thrust::tuple<double, double, double> > AhTwoArraysToMatrix::GetRetranslatedMatrixValues()
 {
 	// First off, translate I and J from matrix int space into real double space
-	if (fReTranslationHasBeenDone == false) {
+	if (false == fReTranslationHasBeenDone) {
 		DoRetranslations();
 		fReTranslationHasBeenDone = true;
 	}

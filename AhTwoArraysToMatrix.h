@@ -65,6 +65,12 @@ public:
 	TStopwatch * GetSwHistSum() { return fSwHistSum; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwCreateTMatrixD() { return fSwCreateTMatrixD; }; // breaks if fDoTiming is not set to true
 	TStopwatch * GetSwCreateTH2D() { return fSwCreateTH2D; }; // breaks if fDoTiming is not set to true
+
+	double GetTimeTranslateValues() { return fTimeTranslateValues; };
+	double GetTimeHistSort() { return fTimeHistSort; };
+	double GetTimeHistSum() { return fTimeHistSum; };
+	double GetTimeCreateTMatrixD() { return fTimeCreateTMatrixD; };
+	double GetTimeCreateTH2D() { return fTimeCreateTH2D; };
 	
 private:
 	template <class T>
@@ -90,11 +96,19 @@ private:
 	
 	bool fReTranslationHasBeenDone;
 	
+	// Stuff for timing purposes
 	TStopwatch * fSwTranslateValues;
 	TStopwatch * fSwHistSort;
 	TStopwatch * fSwHistSum;
 	TStopwatch * fSwCreateTMatrixD;
 	TStopwatch * fSwCreateTH2D;
+
+	cudaEvent_t start, stop;
+	float fTimeTranslateValues;
+	float fTimeHistSort;
+	float fTimeHistSum;
+	float fTimeCreateTMatrixD;
+	float fTimeCreateTH2D;
 	
 	cusp::array1d<int, cusp::device_memory> fI;
 	cusp::array1d<int, cusp::device_memory> fJ;

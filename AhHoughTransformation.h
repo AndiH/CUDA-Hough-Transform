@@ -47,7 +47,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		__device__ double houghTransfFunction(double alpha, double x, double y) {
 			return (cos(alpha*1.74532925199432955e-02) * x + sin(alpha*1.74532925199432955e-02) * y);
 		}
-		
+
 		/**
 		* @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
 		* @return A hough transformed point corresponding to a certain angle
@@ -77,6 +77,7 @@ public:
 	thrust::device_vector<double> GetAngles() { return fAngles; };
 	std::vector<thrust::device_vector<double> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
 protected:
+	void OLD_DoChangeContainerToTwoTuples();
 	void DoChangeContainerToTwoTuples();
 	void DoConformalMapping();
 	void DoGenerateAngles();

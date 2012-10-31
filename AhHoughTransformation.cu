@@ -10,16 +10,11 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
   fEveryXDegrees(everyXDegrees)
 
 {
-	std::cout << "Pre-Container." << std::endl;
 	// DoChangeContainerToTwoTuples();
 	OLD_DoChangeContainerToTwoTuples();
-	std::cout << "Pre-ConfMap." << std::endl;
 	DoConformalMapping();
-	std::cout << "Pre-AngleGen." << std::endl;
 	DoGenerateAngles();
-	std::cout << "Pre-Hough." << std::endl;
 	DoHoughTransform();
-	std::cout << "POST-EVERYTHING." << std::endl;
 }
 
 AhHoughTransformation::~AhHoughTransformation()
@@ -34,7 +29,6 @@ void AhHoughTransformation::OLD_DoChangeContainerToTwoTuples() {
 		h_xYValues.push_back(thrust::make_tuple(h_xValues[i], fYValues[i]));
 	}
 	fXYValues = h_xYValues; //!< copy onto device
-	std::cout << "Size of fXYValues" << fXYValues.size() << std::endl;
 }
 void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 	//! change container from vec<x> and vec<y> to vec<tuple<x, y> >
@@ -109,7 +103,6 @@ void AhHoughTransformation::DoHoughTransform() {
 			d_tempData.begin(),
 			my::htransf()
 		);
-		std::cout << "been here" << std::endl;
 		fTransformedPoints.push_back(d_tempData); //!< push it back to the main data stack vector
 
 	}

@@ -167,23 +167,9 @@ int main (int argc, char** argv) {
 	double everyXDegrees = 30; //!< make a point every X degrees of alpha; default = 30
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
 
-	std::cout << "Been here line 169" << std::endl;
 	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
 	thrust::device_vector<double> alphas = houghTrans->GetAngles();
 	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
-	std::cout << "Been here line 174" << std::endl;
-
-	std::cout << "alphas.size() = " << alphas.size() << ", transformedPoints.size() = " << transformedPoints.size() << std::endl;
-
-	for (int i = 0; i < alphas.size(); i++) {
-		std::cout << "Angle_" << i << " = " << alphas[i] << std::endl;
-	}
-	for (int i = 0; i < transformedPoints.size(); i++) {
-		std::cout << "Transformed point nr. " << i << std::endl;
-		for (int j = 0; j < transformedPoints[i].size(); j++) {
-			std::cout << "  Angle_" << j << " = " << transformedPoints[i][j] << std::endl;
-		}
-	}
 
 	/*
 	 * ### Make CUSP Matrix ###

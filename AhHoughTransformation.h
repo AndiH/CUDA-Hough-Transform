@@ -30,25 +30,28 @@ namespace my { // I don't know if this is a good idea are bad coding style
 	};
 
 	/**
-	* @brief (Outsourced) Function which actually does the hough transformation
-	* @param alpha Angle to be hough transformed with, in degrees
-	* @param x,y Coordinates of the to be transformed point
-	* @return The hough transformed point corresponding to a certain angle (as a double)
-	* 
-	* This actual hough transforming method has been outsourced in order to call different hough transform functions from the operator mother function
-	*/
-	__device__ double houghTransfFunction(double alpha, double x, double y) {
-		return (cos(alpha*1.74532925199432955e-02) * x + sin(alpha*1.74532925199432955e-02) * y);
-	}
-
-	/**
-	* @brief Struct for an operator which hough transforms its input due to an exchangeable hough transforming method
-	* @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
-	* @return A hough transformed point corresponding to a certain angle
+	* @brief Struct for an operator which hough transforms its input according to an exchangeable hough transforming method
 	* 
 	* This method only runs on the device
 	*/
 	struct htransf {
+		/**
+		* @brief (Outsourced) Function which actually does the hough transformation
+		* @param alpha Angle to be hough transformed with, in degrees
+		* @param x,y Coordinates of the to be transformed point
+		* @return The hough transformed point corresponding to a certain angle (as a double)
+		* 
+		* This actual hough transforming method has been outsourced in order to call different hough transform functions from the operator mother function.
+		* So, if you want to change the way the hough transform is done, just implement another houghTransFunction function.
+		*/
+		__device__ double houghTransfFunction(double alpha, double x, double y) {
+			return (cos(alpha*1.74532925199432955e-02) * x + sin(alpha*1.74532925199432955e-02) * y);
+		}
+		
+		/**
+		* @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
+		* @return A hough transformed point corresponding to a certain angle
+		*/
 		__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double> > data) {
 			double alpha = thrust::get<0>(data);
 			thrust::tuple<double, double> xy = thrust::get<1>(data);

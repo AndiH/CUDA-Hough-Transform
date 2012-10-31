@@ -20,7 +20,7 @@ AhHoughTransformation::~AhHoughTransformation()
 {}
 
 void AhHoughTransformation::DoChangeContainerToTwoTuples() {
-	//!< change container from vec<x> and vec<y> to vec<tuple<x, y> >
+	//! change container from vec<x> and vec<y> to vec<tuple<x, y> >
 	thrust::copy(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
@@ -39,7 +39,7 @@ void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 }
 
 void AhHoughTransformation::DoConformalMapping() {
-	//!< conformal mapping
+	//! conformal mapping
 	thrust::transform(
 		fXYValues.begin(),
 		fXYValues.end(),
@@ -49,9 +49,8 @@ void AhHoughTransformation::DoConformalMapping() {
 }
 
 void AhHoughTransformation::DoGenerateAngles() {
-	//!< Resize angle vector to match the actual size
-	fAngles.resize(fMaxAngle/fEveryXDegrees);
-	//!< Fill it
+	fAngles.resize(fMaxAngle/fEveryXDegrees); //!< Resize angle vector to match the actual size
+	//! Fill angle vector with angles in appropriate stepping
 	thrust::sequence(
 		fAngles.begin(), 
 		fAngles.end(), 

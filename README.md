@@ -10,11 +10,13 @@ Starting `houghtransform.cu`, the following steps are done with a number (6) of 
 * Hough transform (on GPU)
 * histogram calculation (on GPU)
 
-The first two bullet points are directly done in `houghtransform.cu`, the last bullet point (with some super features) is done by the class `AhTwoArraysToMatrix`. A Makefile is provided. See the descriptions below. Especially the last two lines.
+The first two bullet points are done in class `AhHoughTransformation`, the last bullet point (with some super features) is done by the class `AhTwoArraysToMatrix`. A Makefile is provided. See the descriptions below. Especially the last two lines.
 
 I'm using **[Thrust](http://thrust.github.com/)**, **[cusp](https://code.google.com/p/cusp-library/)**, and **[ROOT](http://root.cern.ch/)**.
 
 Let's look into the files and some highlights.
+
+***Note**: The description below refers to a prior version of the code, where the Hough Transformation has not been extracted to a single class. Though this is not correct, the general notes are the same. Will change this description here later.*
 
 ## Conformal Map & Hough Transform on GPU — `houghtransform.cu`
 Unfortunately not a class yet. But will be in some future time.

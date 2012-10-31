@@ -19,22 +19,26 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
 AhHoughTransformation::~AhHoughTransformation()
 {}
 
-AhHoughTransformation::DoChangeContainerToTwoTuples() {
+void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 	//!< change container from vec<x> and vec<y> to vec<tuple<x, y> >
 	thrust::copy(
 		thrust::make_zip_iterator(
-			fXValues.begin(), 
-			fYValues.begin()
+			thrust::make_tuple(
+				fXValues.begin(), 
+				fYValues.begin()
+			)
 		), 
 		thrust::make_zip_iterator(
-			fXValues.end(), 
-			fYValues.end()
+			thrust::make_tuple(
+				fXValues.end(), 
+				fYValues.end()
+			)
 		), 
 		fXYValues.begin()
 	);
 }
 
-AhHoughTransformation::DoConformalMapping() {
+void AhHoughTransformation::DoConformalMapping() {
 	//!< conformal mapping
 	thrust::transform(
 		fXYValues.begin(),
@@ -44,7 +48,7 @@ AhHoughTransformation::DoConformalMapping() {
 	);
 }
 
-AhHoughTransformation::DoGenerateAngles() {
+void AhHoughTransformation::DoGenerateAngles() {
 	//!< Resize angle vector to match the actual size
 	fAngles.resize(fMaxAngle/fEveryXDegrees);
 	//!< Fill it
@@ -56,7 +60,7 @@ AhHoughTransformation::DoGenerateAngles() {
 	);
 }
 
-AhHoughTransformation::DoHoughTransform() {
+void AhHoughTransformation::DoHoughTransform() {
 	/** Attention
 	* For every (x*,y*) point a hough transform is done!
 	* While this hough transform itself is done in parallel, all hough transforms in whole are done serial, one by one after an other.

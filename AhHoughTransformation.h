@@ -8,6 +8,7 @@
 #include <thrust/transform.h>
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/zip_iterator.h>
+#include <thrust/sequence.h>
 
 namespace my { // I don't know if this is a good idea are bad coding style
 	/**
@@ -73,10 +74,10 @@ public:
 	thrust::device_vector<double> GetAngles() { return fAngles; };
 	std::vector<thrust::device_vector<double> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
 protected:
-	DoChangeContainerToTwoTuples();
-	DoConformalMapping();
-	DoGenerateAngles();
-	DoHoughTransform();
+	void DoChangeContainerToTwoTuples();
+	void DoConformalMapping();
+	void DoGenerateAngles();
+	void DoHoughTransform();
 private:
 	// data containers
 	thrust::device_vector<double> fXValues;

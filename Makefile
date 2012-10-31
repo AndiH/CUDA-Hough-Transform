@@ -14,7 +14,7 @@ ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRin
 
 PATHTOCUSP = /private/herten/
 
-OBJECTS = houghtransform.o AhTwoArraysToMatrix.o AhTranslatorFunction.o 
+OBJECTS = houghtransform.o AhTwoArraysToMatrix.o AhTranslatorFunction.o AhHoughTransformation.o
 
 all:	hough
 
@@ -23,6 +23,8 @@ houghtransform.o:	houghtransform.cu
 
 AhTwoArraysToMatrix.o:	AhTwoArraysToMatrix.cu AhTwoArraysToMatrix.h AhTranslatorFunction.h
 	nvcc -arch=sm_20 $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhTwoArraysToMatrix.cu
+AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
+	nvcc -arch=sm_20 $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhHoughTransformation.cu
 
 %.o:	%.cu %.h 
 	nvcc -arch=sm_20 $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c $<

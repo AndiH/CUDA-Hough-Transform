@@ -3,6 +3,7 @@
  *
  *  Created on: Sep 21, 2012
  *      Author: Andreas Herten
+ *
  */
 
 #include "Ah2DPeakfinder.h"

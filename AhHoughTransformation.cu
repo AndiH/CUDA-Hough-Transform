@@ -10,8 +10,8 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
   fEveryXDegrees(everyXDegrees)
 
 {
-	// DoChangeContainerToTwoTuples();
-	OLD_DoChangeContainerToTwoTuples();
+	DoChangeContainerToTwoTuples();
+	// OLD_DoChangeContainerToTwoTuples();
 	DoConformalMapping();
 	DoGenerateAngles();
 	DoHoughTransform();
@@ -32,6 +32,8 @@ void AhHoughTransformation::OLD_DoChangeContainerToTwoTuples() {
 }
 void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 	//! change container from vec<x> and vec<y> to vec<tuple<x, y> >
+	fXYValues.resize(fXValues.size());
+
 	thrust::copy(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
@@ -47,9 +49,6 @@ void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 		), 
 		fXYValues.begin()
 	);
-	/**
-	* This does not work. But why?
-	*/
 }
 
 void AhHoughTransformation::DoConformalMapping() {

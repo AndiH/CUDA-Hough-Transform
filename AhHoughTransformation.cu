@@ -49,6 +49,10 @@ void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 		), 
 		fXYValues.begin()
 	);
+	/* TODO
+	 * is this at all necessary to use this stuff here - changing containers?
+	 * performance(AoS) < performance(SoA)
+	 */
 }
 
 void AhHoughTransformation::DoConformalMapping() {

@@ -7,18 +7,33 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
 : fXValues(xValues),
   fYValues(yValues),
   fMaxAngle(maxAngle),
-  fEveryXDegrees(everyXDegrees)
-
+  fEveryXDegrees(everyXDegrees),
+  useIsochrones(false)
 {
-	DoChangeContainerToTwoTuples();
+	DoEverything();
+}
+
+AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, thrust::host_vector<double> rValues, double maxAngle, double everyXDegrees)
+: fXValues(xValues),
+  fYValues(yValues),
+  fRValues(rValues),
+  fMaxAngle(maxAngle),
+  fEveryXDegrees(everyXDegrees),
+  useIsochrones(true)
+{
+	DoEverything();
+}
+
+AhHoughTransformation::~AhHoughTransformation()
+{}
+
+void AhHoughTransformation::DoEverything() {
+	if (false == useIsochrones) DoChangeContainerToTwoTuples();
 	// OLD_DoChangeContainerToTwoTuples();
 	DoConformalMapping();
 	DoGenerateAngles();
 	DoHoughTransform();
 }
-
-AhHoughTransformation::~AhHoughTransformation()
-{}
 
 void AhHoughTransformation::OLD_DoChangeContainerToTwoTuples() {
 	thrust::host_vector<double> h_xValues = fXValues;
@@ -51,14 +66,42 @@ void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 	);
 }
 
-void AhHoughTransformation::DoConformalMapping() {
-	//! conformal mapping
+void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> &originalData, thrust::device_vector<double> &mappeData) {
 	thrust::transform(
-		fXYValues.begin(),
-		fXYValues.end(),
-		fXYValues.begin(), // in place copy (== output vector = input vector) - maybe not so full of sense? think about it
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				originalData.begin(),
+				fXValues.begin(),
+				fYValues.begin(),
+			)
+		),
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				originalData.end(),
+				fXValues.end(),
+				fYValues.end(),
+			)
+		),
+		mappeData.begin(),
 		my::confMap()
 	);
+}
+
+void AhHoughTransformation::DoConformalMapping() {
+	//! conformal mapping
+	if (true == useIsochrones) {
+		fCXValues.resize(fXValues.size());
+		ConformalMapOneVector(fXValues, fCXValues);
+		ConformalMapOneVector(fYValues, fCYValues);
+		ConformalMapOneVector(fRValues, fCRValues);
+	} else {
+		thrust::transform(
+			fXYValues.begin(),
+			fXYValues.end(),
+			fXYValues.begin(), // in place copy (== output vector = input vector) - maybe not so full of sense? think about it
+			my::confMap()
+		);
+	}
 }
 
 void AhHoughTransformation::DoGenerateAngles() {
@@ -78,10 +121,11 @@ void AhHoughTransformation::DoHoughTransform() {
 	* While this hough transform itself is done in parallel, all hough transforms in whole are done serial, one by one after an other.
 	* This might be a point of huge improvements
 	*/
-	for (int iDataPoints = 0; iDataPoints < fXYValues.size(); iDataPoints++) {
+	for (int iDataPoints = 0; iDataPoints < fXValues.size(); iDataPoints++) {
 		thrust::device_vector<double> d_tempData(fAngles.size()); //!< Temp vector which is being filled and then pushed back to the main return vector. For every angle point theres a data point, so that's the size of it
 
-		thrust::constant_iterator<thrust::tuple<double, double> > currentData(fXYValues[iDataPoints]); //!< create constant iterator for the conf mapped data 2-tuples
+		if (false == useIsochrones) thrust::constant_iterator<thrust::tuple<double, double> > currentData(fXYValues[iDataPoints]); //!< create constant iterator for the conf mapped data 2-tuples
+		if (true == useIsochrones) thrust::constant_iterator<thrust::tuple<double, double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
 
 		//! following transformation uses the operator of htransf to run over all elements
 		//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the conf mapped 2-tuple

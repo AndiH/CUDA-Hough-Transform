@@ -8,7 +8,7 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
   fYValues(yValues),
   fMaxAngle(maxAngle),
   fEveryXDegrees(everyXDegrees),
-  useIsochrones(false)
+  fUseIsochrones(false)
 {
 	DoEverything();
 }
@@ -19,7 +19,7 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
   fRValues(rValues),
   fMaxAngle(maxAngle),
   fEveryXDegrees(everyXDegrees),
-  useIsochrones(true)
+  fUseIsochrones(true)
 {
 	DoEverything();
 }
@@ -28,7 +28,7 @@ AhHoughTransformation::~AhHoughTransformation()
 {}
 
 void AhHoughTransformation::DoEverything() {
-	if (false == useIsochrones) DoChangeContainerToTwoTuples();
+	if (false == fUseIsochrones) DoChangeContainerToTwoTuples();
 	// OLD_DoChangeContainerToTwoTuples();
 	DoConformalMapping();
 	DoGenerateAngles();
@@ -72,14 +72,14 @@ void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> 
 			thrust::make_tuple(
 				originalData.begin(),
 				fXValues.begin(),
-				fYValues.begin(),
+				fYValues.begin()
 			)
 		),
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
 				originalData.end(),
 				fXValues.end(),
-				fYValues.end(),
+				fYValues.end()
 			)
 		),
 		mappeData.begin(),
@@ -89,7 +89,7 @@ void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> 
 
 void AhHoughTransformation::DoConformalMapping() {
 	//! conformal mapping
-	if (true == useIsochrones) {
+	if (true == fUseIsochrones) {
 		fCXValues.resize(fXValues.size());
 		ConformalMapOneVector(fXValues, fCXValues);
 		ConformalMapOneVector(fYValues, fCYValues);
@@ -124,9 +124,12 @@ void AhHoughTransformation::DoHoughTransform() {
 	for (int iDataPoints = 0; iDataPoints < fXValues.size(); iDataPoints++) {
 		thrust::device_vector<double> d_tempData(fAngles.size()); //!< Temp vector which is being filled and then pushed back to the main return vector. For every angle point theres a data point, so that's the size of it
 
-		if (false == useIsochrones) thrust::constant_iterator<thrust::tuple<double, double> > currentData(fXYValues[iDataPoints]); //!< create constant iterator for the conf mapped data 2-tuples
-		if (true == useIsochrones) thrust::constant_iterator<thrust::tuple<double, double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
-
+		if (false == fUseIsochrones) {
+			thrust::constant_iterator<thrust::tuple<double, double> > currentData(fXYValues[iDataPoints]); //!< create constant iterator for the conf mapped data 2-tuples
+		} else { // (true == fUseIsochrones)
+			thrust::constant_iterator<thrust::tuple<double, double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
+		}
+		
 		//! following transformation uses the operator of htransf to run over all elements
 		//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the conf mapped 2-tuple
 		//!   the result of the calculation is written in to the d_tempData vector

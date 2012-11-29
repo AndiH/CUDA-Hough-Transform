@@ -29,7 +29,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		}
 
 		// Testing code for isochrones: 
-		__device__ double operator() (thrust::tuple<double, double, double> &data) {
+		__device__ double operator() (thrust::tuple<double&, double&, double&> &data) {
 			double value = thrust::get<0>(data);
 			double x = thrust::get<1>(data);
 			double y = thrust::get<2>(data);
@@ -64,7 +64,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		* @return A hough transformed point corresponding to a certain angle
 		*/
 		__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double> > data) {
-			double alpha = thrust::get<0>(data);s
+			double alpha = thrust::get<0>(data);
 			thrust::tuple<double, double> xy = thrust::get<1>(data);
 			double x = thrust::get<0>(xy);	
 
@@ -113,7 +113,7 @@ private:
 	// data containers
 	thrust::device_vector<double> fXValues, fCXValues;
 	thrust::device_vector<double> fYValues, fCYValues;
-	thrust::device_vector<double> fRValues, fXRValues;
+	thrust::device_vector<double> fRValues, fCRValues;
 	thrust::device_vector<thrust::tuple<double, double> > fXYValues;
 	thrust::device_vector<double> fAngles;
 	std::vector<thrust::device_vector<double> > fTransformedPoints;
@@ -123,7 +123,7 @@ private:
 	double fEveryXDegrees; // make a data point every x degrees
 
 	// switches
-	bool useIsochrones;
+	bool fUseIsochrones;
 
 };
 #endif //AHHOUGHTRANSFORMATION_H

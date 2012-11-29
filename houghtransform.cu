@@ -103,11 +103,12 @@ int main (int argc, char** argv) {
 	std::vector<double> r;
 
 	readPoints("data.dat", x, y, r, 18);
-
+	// readPoints("real_data.dat", x, y, r, 18);
 
 	//! Preparations
 	thrust::host_vector<double> h_x = x;
 	thrust::host_vector<double> h_y = y;
+	thrust::host_vector<double> h_r = r;
 	
 	TStopwatch myWatch;
 
@@ -116,7 +117,11 @@ int main (int argc, char** argv) {
 	double everyXDegrees = 30; //!< make a point every X degrees of alpha; default = 30
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
 
-	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+	// thrust::device_vector<double> alphas = houghTrans->GetAngles();
+	// std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
+
+	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, 2*maxAngle, everyXDegrees);
 	thrust::device_vector<double> alphas = houghTrans->GetAngles();
 	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
 

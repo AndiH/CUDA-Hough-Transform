@@ -63,7 +63,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		* @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
 		* @return A hough transformed point corresponding to a certain angle
 		*/
-		__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double> > data) {
+		__device__ double operator() (thrust::tuple<double &, thrust::tuple<double, double> > data) {
 			double alpha = thrust::get<0>(data);
 			thrust::tuple<double, double> xy = thrust::get<1>(data);
 			double x = thrust::get<0>(xy);	
@@ -76,7 +76,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		}
 
 		// Testing code for isochrones:
-		__device__ double operator() (thrust::tuple<double, thrust::tuple<double, double, double> > data) {
+		__device__ double operator() (thrust::tuple<double &, thrust::tuple<double, double, double> > data) {
 			double alpha = thrust::get<0>(data);
 			thrust::tuple<double, double, double> xyr = thrust::get<1>(data);
 			double x = thrust::get<0>(xyr);

@@ -83,10 +83,14 @@ void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }
 
+/**
+ * @brief Prints out every element of a vector
+ * @param Vector - and a type (this method is a template)
+ */
 template <class T>
 void printVector (const T & v) {
 	for (int i = 0; i < v.size(); ++i) {
-		std::cout << v[i];
+		std::cout << v[i] << " ";
 	}
 	std::cout << std::endl;
 }

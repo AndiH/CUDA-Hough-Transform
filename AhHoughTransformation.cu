@@ -21,6 +21,7 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
   fEveryXDegrees(everyXDegrees),
   fUseIsochrones(true)
 {
+	// std::cout << "fXValues.size() = " << fXValues.size() << ", fYValues.size()" << fYValues.size() << "fRValues.size() = " << fRValues.size() << ", fMaxAngle = " << fMaxAngle << ", fEveryXDegrees = " << fEveryXDegrees << ", fUseIsochrones = " << fUseIsochrones << std::endl;
 	DoEverything();
 }
 
@@ -66,6 +67,26 @@ void AhHoughTransformation::DoChangeContainerToTwoTuples() {
 	);
 }
 
+void AhHoughTransformation::DoConformalMapping() {
+	//! conformal mapping
+	if (true == fUseIsochrones) {
+		fCXValues.resize(fXValues.size());
+		fCYValues.resize(fYValues.size());
+		fCRValues.resize(fRValues.size());
+
+		ConformalMapOneVector(fXValues, fCXValues);
+		ConformalMapOneVector(fYValues, fCYValues);
+		ConformalMapOneVector(fRValues, fCRValues);
+	} else {
+		thrust::transform(
+			fXYValues.begin(),
+			fXYValues.end(),
+			fXYValues.begin(), // in place copy (== output vector = input vector) - maybe not so full of sense? think about it
+			my::confMap()
+		);
+	}
+}
+
 void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> &originalData, thrust::device_vector<double> &mappedData) {
 	thrust::transform(
 		thrust::make_zip_iterator(
@@ -86,26 +107,6 @@ void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> 
 		my::confMap()
 	);
 	std::cout << "been here!" << std::endl;
-}
-
-void AhHoughTransformation::DoConformalMapping() {
-	//! conformal mapping
-	if (true == fUseIsochrones) {
-		fCXValues.resize(fXValues.size());
-		fCYValues.resize(fYValues.size());
-		fCRValues.resize(fRValues.size());
-
-		ConformalMapOneVector(fXValues, fCXValues);
-		ConformalMapOneVector(fYValues, fCYValues);
-		ConformalMapOneVector(fRValues, fCRValues);
-	} else {
-		thrust::transform(
-			fXYValues.begin(),
-			fXYValues.end(),
-			fXYValues.begin(), // in place copy (== output vector = input vector) - maybe not so full of sense? think about it
-			my::confMap()
-		);
-	}
 }
 
 void AhHoughTransformation::DoGenerateAngles() {

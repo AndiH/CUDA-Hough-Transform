@@ -131,11 +131,11 @@ int main (int argc, char** argv) {
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
 
 	//! Simple (x,y) coordinates
-	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
 
 	//! Use isochrones - (x,y,r) coordinates
-	maxAngle *= 2; //!< for isochrones, hough transformation goes from 0 to 360
-	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees);
+	// maxAngle *= 2; //!< for isochrones, hough transformation goes from 0 to 360
+	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees);
 
 	thrust::device_vector<double> alphas = houghTrans->GetAngles();
 	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();

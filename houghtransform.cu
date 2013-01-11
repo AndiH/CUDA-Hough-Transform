@@ -13,6 +13,7 @@
 #include <thrust/iterator/constant_iterator.h>
 #include <thrust/iterator/zip_iterator.h>
 #include <thrust/sequence.h>
+#include <thrust/extrema.h>
 
 #include "cuPrintf.cu"
 
@@ -63,6 +64,7 @@ void readPoints(std::string filename, std::vector<double> &x, std::vector<double
 	float tempX, tempY, tempZ, tempR, tempI;
 	char tempChar[10];
 	int i = 1;
+	if (!file.good() || file.fail()) std::cout << "Failed opening file!" << std::endl;
 	while(i <= upToLineNumber && file >> tempX >> tempY >> tempZ >> tempR >> tempI >> tempChar) {
 		x.push_back(tempX);
 		y.push_back(tempY);
@@ -79,6 +81,18 @@ void readPoints(std::string filename, std::vector<double> &x, std::vector<double
  */
 void printTuple (thrust::tuple<double, double> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
+}
+
+/**
+ * @brief Prints out every element of a vector
+ * @param Vector - and a type (this method is a template)
+ */
+template <class T>
+void printVector (const T & v) {
+	for (int i = 0; i < v.size(); ++i) {
+		std::cout << v[i] << " ";
+	}
+	std::cout << std::endl;
 }
 
 /**
@@ -101,13 +115,13 @@ int main (int argc, char** argv) {
 	std::vector<double> x;
 	std::vector<double> y;
 	std::vector<double> r;
+	// readPoints("data.dat", x, y, r, 18);
+	readPoints("real_data.txt", x, y, r, 18);
 
-	readPoints("data.dat", x, y, r, 18);
-
-
-	//! Preparations
+	//! Change container from std::vector to thrust::host_vector
 	thrust::host_vector<double> h_x = x;
 	thrust::host_vector<double> h_y = y;
+	thrust::host_vector<double> h_r = r;
 	
 	TStopwatch myWatch;
 
@@ -116,36 +130,49 @@ int main (int argc, char** argv) {
 	double everyXDegrees = 30; //!< make a point every X degrees of alpha; default = 30
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
 
-	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+	//! Simple (x,y) coordinates
+	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+
+	//! Use isochrones - (x,y,r) coordinates
+	maxAngle *= 2; //!< for isochrones, hough transformation goes from 0 to 360
+	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees);
+
 	thrust::device_vector<double> alphas = houghTrans->GetAngles();
 	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
+
+
 
 	/*
 	 * ### Make CUSP Matrix ###
 	 */
+	//! Find upper and lower borders of histograms
 	int nBinsX = (int) maxAngle/everyXDegrees;
 	double minValueX = 0;
 	double maxValueX = maxAngle;
-	if (verbose > 0) std::cout << "nBinsX = " << nBinsX << ", minValueX = " << minValueX << " ,maxValueX = " << maxValueX << std::endl;
+	if (verbose > 0) std::cout << "nBinsX = " << nBinsX << ", minValueX = " << minValueX << ", maxValueX = " << maxValueX << std::endl;
 
 	int nBinsY = maxAngle/everyXDegrees;
-	double minValueY = -0.4;
-	double maxValueY = 0.7;
-	if (verbose > 0) std::cout << "nBinsY = " << nBinsY << ", minValueY = " << minValueY << ", maxValueY " << maxValueY << std::endl;
-	// ALTERNATIVE DEFINITION OF M**VALUEY: using automated mins and maxes
-//	double minValueY = transformedPoints[0][0];
-//	double maxValueY = transformedPoints[0][0];
-//	for (int i = 0; i < mappedData.size(); i++) {
-//		thrust::device_vector<double> tempD(transformedPoints[i]);
-//		double minimum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::minimum<double>());
-//		double maximum = thrust::reduce(tempD.begin(), tempD.end(), std::numeric_limits<double>::max(), thrust::maximum<double>());
-//		if (minimum < minValue) minValueY = minimum;
-//		if (maximum > maxValue) maxValueY = maximum;
-//	}
-//	minValueY -= everyXDegrees;
-//	maxValueY -= everyXDegrees;
+	// double minValueY = -0.4;
+	// double maxValueY = 0.7;
+	// if (verbose > 0) std::cout << "nBinsY = " << nBinsY << ", minValueY = " << minValueY << ", maxValueY " << maxValueY << std::endl;
+	//! Automatically get y borders
+	std::cout << transformedPoints.size() << std::endl;
+	double minValueY = transformedPoints[0][0];
+	double maxValueY = transformedPoints[0][0];
+	std::cout << "minValueY = " << minValueY << ", maxValueY = " << maxValueY << std::endl;
+	for (int i = 0; i < transformedPoints.size(); i++) {
+		thrust::device_vector<double> tempD(transformedPoints[i]);
+		double minimum = *(thrust::min_element(tempD.begin(), tempD.end()));
+		double maximum = *(thrust::max_element(tempD.begin(), tempD.end()));
+		if (minimum < minValueY) minValueY = minimum;
+		if (maximum > maxValueY) maxValueY = maximum;
+		std::cout << "minimum = " << minimum << ", maximum = " << maximum << std::endl;
+	}
+	minValueY *= 1.1; //!< make edges a little smoother
+	maxValueY *= 1.1; //!< make edges a little smoother
+	std::cout << "minValueY = " << minValueY << ", maxValueY = " << maxValueY << std::endl;
 	
-	// Now create the Matrices
+	//! Create matrices
 	std::vector<TH2D*> theHistograms;
 	std::vector< cusp::coo_matrix<int, double, cusp::device_memory> > theMatrices;
 	std::vector<AhTwoArraysToMatrix> theObjects;
@@ -234,9 +261,6 @@ int main (int argc, char** argv) {
 	/*
 	 * 
 	 * ### TODO ###
-	 * Get Matrix min max automatically
-	 * MAKE CLASS OF THAT
-	 * 
 	 * 
 	 * make peak finder
 	 * outline:

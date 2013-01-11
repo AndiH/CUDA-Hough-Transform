@@ -101,8 +101,6 @@ public:
 	std::vector<thrust::device_vector<double> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
 protected:
 	void DoEverything();
-	void OLD_DoChangeContainerToTwoTuples();
-	void DoChangeContainerToTwoTuples();
 	void DoConformalMapping();
 	void DoGenerateAngles();
 	void DoHoughTransform();
@@ -114,7 +112,6 @@ private:
 	thrust::device_vector<double> fXValues, fCXValues;
 	thrust::device_vector<double> fYValues, fCYValues;
 	thrust::device_vector<double> fRValues, fCRValues;
-	thrust::device_vector<thrust::tuple<double, double> > fXYValues;
 	thrust::device_vector<double> fAngles;
 	std::vector<thrust::device_vector<double> > fTransformedPoints;
 

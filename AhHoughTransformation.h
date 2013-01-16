@@ -92,18 +92,29 @@ class AhHoughTransformation
 {
 public:
 	AhHoughTransformation();
-	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 180., double everyXDegrees = 30.);
-	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 360., double everyXDegrees = 30.);
+	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 180., double everyXDegrees = 30., bool doTiming = false);
+	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 360., double everyXDegrees = 30., bool doTiming = false);
 	
 	virtual ~AhHoughTransformation();
 
 	thrust::device_vector<double> GetAngles() { return fAngles; };
 	std::vector<thrust::device_vector<double> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
+
+	float GetTimeConfMap() { return fTimeConfMap; }; // in milli seconds
+	float GetTimeGenAngles() { return fTimeGenAngles; }; // in milli seconds
+	float GetTimeHoughTransform() { return fTimeHoughTransform; }; // in milli seconds
+
 protected:
 	void DoEverything();
 	void DoConformalMapping();
 	void DoGenerateAngles();
+	template <class T>
+	void DoHoughTransformOnePoint(thrust::constant_iterator<T>, thrust::device_vector<double> &);
 	void DoHoughTransform();
+
+	void EventTiming_start();
+	float EventTiming_stop();
+
 private:
 	// functions
 	void ConformalMapOneVector(thrust::device_vector<double> &, thrust::device_vector<double> &); // TODO: Are the & here really working?
@@ -121,6 +132,13 @@ private:
 
 	// switches
 	bool fUseIsochrones;
+	bool fDoTiming;
+
+	// for timing
+	cudaEvent_t fEventStart, fEventStop;
+	float fTimeConfMap;
+	float fTimeGenAngles;
+	float fTimeHoughTransform;
 
 };
 #endif //AHHOUGHTRANSFORMATION_H

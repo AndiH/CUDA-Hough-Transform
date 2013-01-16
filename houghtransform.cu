@@ -34,7 +34,7 @@
  * @mainpage Conformal Mapping and Hough Transformation in CUDA Thrust
  * 
  * <h1>HoughTrust</h1>
- * <h2>A toy project during my PhD time</h2>
+ * <h2>A PhD project</h2>
  * 
  * Using CUDA Thrust to conformal map and hough transform points of a tracker. Two dimensionally.
  * 
@@ -131,16 +131,16 @@ int main (int argc, char** argv) {
 	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
 
 	//! Simple (x,y) coordinates
-	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees);
+	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees, true);
 
 	//! Use isochrones - (x,y,r) coordinates
 	// maxAngle *= 2; //!< for isochrones, hough transformation goes from 0 to 360
-	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees);
+	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees, true);
 
 	thrust::device_vector<double> alphas = houghTrans->GetAngles();
 	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
 
-
+	// std::cout << "It took " << houghTrans->GetTimeHoughTransform()/1000 << "s for actual HT." << std::endl;
 
 	/*
 	 * ### Make CUSP Matrix ###

@@ -3,22 +3,24 @@
 AhHoughTransformation::AhHoughTransformation()
 {}
 
-AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, double maxAngle, double everyXDegrees)
+AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, double maxAngle, double everyXDegrees, bool doTiming)
 : fXValues(xValues),
   fYValues(yValues),
   fMaxAngle(maxAngle),
   fEveryXDegrees(everyXDegrees),
+  fDoTiming(doTiming),
   fUseIsochrones(false)
 {
 	DoEverything();
 }
 
-AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, thrust::host_vector<double> rValues, double maxAngle, double everyXDegrees)
+AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, thrust::host_vector<double> rValues, double maxAngle, double everyXDegrees, bool doTiming)
 : fXValues(xValues),
   fYValues(yValues),
   fRValues(rValues),
   fMaxAngle(maxAngle),
   fEveryXDegrees(everyXDegrees),
+  fDoTiming(doTiming),
   fUseIsochrones(true)
 {
 	// std::cout << "fXValues.size() = " << fXValues.size() << ", fYValues.size()" << fYValues.size() << "fRValues.size() = " << fRValues.size() << ", fMaxAngle = " << fMaxAngle << ", fEveryXDegrees = " << fEveryXDegrees << ", fUseIsochrones = " << fUseIsochrones << std::endl;
@@ -28,10 +30,36 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
 AhHoughTransformation::~AhHoughTransformation()
 {}
 
+void AhHoughTransformation::EventTiming_start() {
+	cudaEventCreate(&fEventStart);
+	cudaEventCreate(&fEventStop);
+	cudaThreadSynchronize();
+	cudaEventRecord(fEventStart, 0);
+}
+
+float AhHoughTransformation::EventTiming_stop() {
+	float currentTime;
+	cudaEventRecord(fEventStop, 0);
+	cudaEventSynchronize(fEventStop);
+	cudaEventElapsedTime(&currentTime, fEventStart, fEventStop);
+	cudaEventDestroy(fEventStart);
+	cudaEventDestroy(fEventStop);
+
+	return currentTime;
+}
+
 void AhHoughTransformation::DoEverything() {
+	if (true == fDoTiming) EventTiming_start();
 	DoConformalMapping();
+	if (true == fDoTiming) fTimeConfMap = EventTiming_stop();
+
+	if (true == fDoTiming) EventTiming_start();
 	DoGenerateAngles();
+	if (true == fDoTiming) fTimeGenAngles = EventTiming_stop();
+
+	if (true == fDoTiming) EventTiming_start();
 	DoHoughTransform();
+	if (true == fDoTiming) fTimeHoughTransform = EventTiming_stop();
 }
 
 void AhHoughTransformation::DoConformalMapping() {
@@ -83,6 +111,26 @@ void AhHoughTransformation::DoGenerateAngles() {
 	);
 }
 
+template <class T>
+void AhHoughTransformation::DoHoughTransformOnePoint(thrust::constant_iterator<T> data, thrust::device_vector<double> &d_tempData) {
+	thrust::transform(
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fAngles.begin(),
+				data
+			)
+		),
+		thrust::make_zip_iterator(
+			thrust::make_tuple(
+				fAngles.end(),
+				data
+			)
+		),
+		d_tempData.begin(),
+		my::htransf()
+	);
+}
+
 void AhHoughTransformation::DoHoughTransform() {
 	/** Attention
 	* For every (x*,y*) point a hough transform is done!
@@ -98,43 +146,45 @@ void AhHoughTransformation::DoHoughTransform() {
 			//! following transformation uses the operator of htransf to run over all elements
 			//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the 	conf mapped 2-tuple
 			//!   the result of the calculation is written in to the d_tempData vector
-			thrust::transform(
-				thrust::make_zip_iterator(
-					thrust::make_tuple(
-						fAngles.begin(),
-						currentData
-					)
-				),
-				thrust::make_zip_iterator(
-					thrust::make_tuple(
-						fAngles.end(),
-						currentData
-					)
-				),
-				d_tempData.begin(),
-				my::htransf()
-			);
+			DoHoughTransformOnePoint<thrust::tuple<double, double> >(currentData, d_tempData);
+			// thrust::transform(
+			// 	thrust::make_zip_iterator(
+			// 		thrust::make_tuple(
+			// 			fAngles.begin(),
+			// 			currentData
+			// 		)
+			// 	),
+			// 	thrust::make_zip_iterator(
+			// 		thrust::make_tuple(
+			// 			fAngles.end(),
+			// 			currentData
+			// 		)
+			// 	),
+			// 	d_tempData.begin(),
+			// 	my::htransf()
+			// );
 		} else { // (true == fUseIsochrones)
 			thrust::constant_iterator<thrust::tuple<double, double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
 			//! following transformation uses the operator of htransf to run over all elements
 			//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the 	conf mapped 2-tuple
 			//!   the result of the calculation is written in to the d_tempData vector
-			thrust::transform(
-				thrust::make_zip_iterator(
-					thrust::make_tuple(
-						fAngles.begin(),
-						currentData
-					)
-				),
-				thrust::make_zip_iterator(
-					thrust::make_tuple(
-						fAngles.end(),
-						currentData
-					)
-				),
-				d_tempData.begin(),
-				my::htransf()
-			);
+			DoHoughTransformOnePoint<thrust::tuple<double, double, double> >(currentData, d_tempData);
+			// thrust::transform(
+			// 	thrust::make_zip_iterator(
+			// 		thrust::make_tuple(
+			// 			fAngles.begin(),
+			// 			currentData
+			// 		)
+			// 	),
+			// 	thrust::make_zip_iterator(
+			// 		thrust::make_tuple(
+			// 			fAngles.end(),
+			// 			currentData
+			// 		)
+			// 	),
+			// 	d_tempData.begin(),
+			// 	my::htransf()
+			// );
 		}
 		
 		

@@ -25,9 +25,6 @@
 #include "TCanvas.h"
 #include "TStopwatch.h"
 
-#include <cusp/coo_matrix.h>
-#include <cusp/print.h>
-
 #include "AhHoughTransformation.h"
 
 /**

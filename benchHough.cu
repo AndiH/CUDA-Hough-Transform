@@ -91,6 +91,7 @@ int main (int argc, char** argv) {
 				h_yMid.push_back(y[i]);
 				h_rMid.push_back(r[i]);
 				if (vI[i] <= singleRange) {
+					std::cout << x[i] << std::endl;
 					h_x.push_back(x[i]);
 					h_y.push_back(y[i]);
 					h_r.push_back(r[i]);
@@ -148,8 +149,11 @@ int main (int argc, char** argv) {
 		graphGenAngles->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesGenAngles[i]);
 		graphHoughTrans->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesHoughTrans[i]);
 		graphAll->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAll[i]);
-		graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]/midRangeMax);
-		graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]/maxRangeMax);
+		// graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]/midRangeMax);
+		// graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]/maxRangeMax);
+		graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]);
+		graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]);
+		std::cout << "i = " << i << ":: time per Event MID: " << timesAllMid[i]/midRangeMax << " ---- time per Event MAX: " << timesAllMax[i]/maxRangeMax << std::endl;
 
 	}
 	int dotSize = 1;
@@ -204,7 +208,7 @@ int main (int argc, char** argv) {
 	mg->Add(graphConfMap);
 	
 	mg->Draw("AP");
-	mg->GetXaxis()->SetTitle("Number of Grid Points/#");
+	mg->GetXaxis()->SetTitle("Number of grid points/#");
 	mg->GetYaxis()->SetTitle("Time/ms");
 	mg->GetYaxis()->SetTitleOffset(1.4);
 	
@@ -236,8 +240,9 @@ int main (int argc, char** argv) {
 	TLegend * legEvents = c2->BuildLegend(0.7,0.8,0.95,0.95);
 	legEvents->SetFillColor(kWhite);
 	c2->SetLogy();
-	mgEvents->GetXaxis()->SetTitle("Number of Grid Points/#");
-	mgEvents->GetYaxis()->SetTitle("Computation Time per Event/ms");
+	mgEvents->GetXaxis()->SetTitle("Hough angle #alpha resolution");
+	// mgEvents->GetYaxis()->SetTitle("Computation Time per Event/ms");
+	mgEvents->GetYaxis()->SetTitle("Computation time/ms");
 	mgEvents->GetYaxis()->SetTitleOffset(1.3);
 	c2->Update();
 

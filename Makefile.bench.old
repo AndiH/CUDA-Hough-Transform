@@ -16,7 +16,7 @@ ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRin
 # NVCCOPTIONS := -gencode arch=compute_35,code=sm_35 -g
 NVCCOPTIONS := -arch=sm_20
 
-PATHTOCUSP = /private/herten/cusplibrary
+# PATHTOCUSP = /private/herten/cusplibrary
 
 OBJECTS = benchHough.o AhHoughTransformation.o
 
@@ -24,16 +24,16 @@ OBJECTS = benchHough.o AhHoughTransformation.o
 all:	benchHough
 
 benchHough.o:	benchHough.cu
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c benchHough.cu
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -dlink -c benchHough.cu
 
 AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dlink -c AhHoughTransformation.cu
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -c AhHoughTransformation.cu
 
 # %.o:	%.cu %.h 
-# 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c $<
+# 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -c $<
 
 benchHough:	$(OBJECTS)
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -o $@ $(OBJECTS) 
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -o $@ $(OBJECTS) 
 
 clean:
 	rm -f *.o *~

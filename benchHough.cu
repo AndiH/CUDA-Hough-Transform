@@ -179,13 +179,13 @@ int main (int argc, char** argv) {
 	graphAllMid->SetMarkerStyle(kFullDotLarge);
 	graphAllMid->SetMarkerSize(dotSize);
 	graphAllMid->SetMarkerColor(graphAllMid->GetLineColor() +2);
-	graphAllMid->SetTitle("All (50 Evt)");
+	graphAllMid->SetTitle("All (100 Evt)");
 	graphAllMax->SetLineColor(kGreen);
 	graphAllMax->SetFillColor(graphAllMax->GetLineColor() - 10);
 	graphAllMax->SetMarkerStyle(kFullDotLarge);
 	graphAllMax->SetMarkerSize(dotSize);
 	graphAllMax->SetMarkerColor(graphAllMax->GetLineColor() +2);
-	graphAllMax->SetTitle("All (500 Evt)");
+	graphAllMax->SetTitle("All (1000 Evt)");
 
 	TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
 	TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
@@ -198,9 +198,9 @@ int main (int argc, char** argv) {
 	mg->Add(graphConfMap);
 	
 	mg->Draw("AP");
-	// mg->GetXaxis()->SetTitle("Grid Size (Number of Grid Points)/#");
-	// mg->GetYaxis()->SetTitle("Time/s");
-	// mg->GetYaxis()->SetTitleOffset(1.4);
+	mg->GetXaxis()->SetTitle("Grid Size (Number of Grid Points)/#");
+	mg->GetYaxis()->SetTitle("Computation Time per Event/s");
+	mg->GetYaxis()->SetTitleOffset(1.4);
 	
 // 	gPad->SetLogy();
 	

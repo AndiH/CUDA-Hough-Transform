@@ -16,7 +16,7 @@ ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRin
 # NVCCOPTIONS := -gencode arch=compute_35,code=sm_35 -g
 NVCCOPTIONS := -arch=sm_20
 
-# PATHTOCUSP = /private/herten/cusplibrary
+# PATHTOCUSP = /Applications/Panda/CUDA
 
 OBJECTS = benchHough.o AhHoughTransformation.o
 

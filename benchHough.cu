@@ -18,12 +18,14 @@
 
 #include "TROOT.h"
 #include "TApplication.h"
+#include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
 #include "TLegend.h"
 #include "TPaveText.h"
-#include "TCanvas.h"
 #include "TStopwatch.h"
+#include "TMath.h"
+#include "TAxis.h"
 
 #include "AhHoughTransformation.h"
 
@@ -77,8 +79,8 @@ int main (int argc, char** argv) {
 	
 	//! Change container from std::vector to thrust::host_vector
 	int singleRange = 1;
-	int midRangeMax = 50;
-	int maxRangeMax = 500;
+	int midRangeMax = 100;
+	int maxRangeMax = 999;
 	for (int i = 0; i < x.size(); ++i) {
 		if (vI[i] <= maxRangeMax) {
 			h_xMax.push_back(x[i]);
@@ -89,6 +91,7 @@ int main (int argc, char** argv) {
 				h_yMid.push_back(y[i]);
 				h_rMid.push_back(r[i]);
 				if (vI[i] <= singleRange) {
+					std::cout << x[i] << std::endl;
 					h_x.push_back(x[i]);
 					h_y.push_back(y[i]);
 					h_r.push_back(r[i]);
@@ -107,12 +110,16 @@ int main (int argc, char** argv) {
 // 	}
 // }
 	std::vector<double> vOfDegreeCellsizes;
+	// vOfDegreeCellsizes.push_back(60);
 	vOfDegreeCellsizes.push_back(30);
+	// vOfDegreeCellsizes.push_back(25);
+	vOfDegreeCellsizes.push_back(20);
 	vOfDegreeCellsizes.push_back(15);
 	vOfDegreeCellsizes.push_back(10);
 	vOfDegreeCellsizes.push_back(5);
 	vOfDegreeCellsizes.push_back(2);
 	vOfDegreeCellsizes.push_back(1);
+	vOfDegreeCellsizes.push_back(0.5);
 	for (int i = 0; i < vOfDegreeCellsizes.size(); ++i) {
 		AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, vOfDegreeCellsizes[i], true);
 		AhHoughTransformation * houghTransMid = new AhHoughTransformation(h_xMid, h_yMid, h_rMid, maxAngle, vOfDegreeCellsizes[i], true);
@@ -142,32 +149,35 @@ int main (int argc, char** argv) {
 		graphGenAngles->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesGenAngles[i]);
 		graphHoughTrans->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesHoughTrans[i]);
 		graphAll->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAll[i]);
-		graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]/midRangeMax);
-		graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]/maxRangeMax);
+		// graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]/midRangeMax);
+		// graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]/maxRangeMax);
+		graphAllMid->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMid[i]);
+		graphAllMax->SetPoint(i, maxAngle/vOfDegreeCellsizes[i], timesAllMax[i]);
+		std::cout << "i = " << i << ":: time per Event MID: " << timesAllMid[i]/midRangeMax << " ---- time per Event MAX: " << timesAllMax[i]/maxRangeMax << std::endl;
 
 	}
 	int dotSize = 1;
 
 	graphConfMap->SetLineColor(kOrange);
-	graphConfMap->SetFillColor(graphConfMap->GetLineColor() - 10);
-	graphConfMap->SetMarkerStyle(kFullDotLarge);
+	graphConfMap->SetFillColor(kYellow - 10);
+	graphConfMap->SetMarkerStyle(kFullTriangleUp);
 	graphConfMap->SetMarkerSize(dotSize);
-	graphConfMap->SetMarkerColor(graphConfMap->GetLineColor() +2);
+	graphConfMap->SetMarkerColor(graphConfMap->GetLineColor() + 2);
 	graphConfMap->SetTitle("Conf Map");
-	graphGenAngles->SetLineColor(kOrange+3);
-	graphGenAngles->SetFillColor(graphGenAngles->GetLineColor() - 10);
-	graphGenAngles->SetMarkerStyle(kFullDotLarge);
+	graphGenAngles->SetLineColor(kOrange+6);
+	graphGenAngles->SetFillColor(kYellow - 9);
+	graphGenAngles->SetMarkerStyle(kFullSquare);
 	graphGenAngles->SetMarkerSize(dotSize);
 	graphGenAngles->SetMarkerColor(graphGenAngles->GetLineColor() +2);
 	graphGenAngles->SetTitle("Gen Angles");
 	graphHoughTrans->SetLineColor(kRed);
-	graphHoughTrans->SetFillColor(graphHoughTrans->GetLineColor() - 10);
-	graphHoughTrans->SetMarkerStyle(kFullDotLarge);
+	graphHoughTrans->SetFillColor(graphHoughTrans->GetLineColor() - 9);
+	graphHoughTrans->SetMarkerStyle(kFullTriangleDown);
 	graphHoughTrans->SetMarkerSize(dotSize);
 	graphHoughTrans->SetMarkerColor(graphHoughTrans->GetLineColor() +2);
 	graphHoughTrans->SetTitle("Hough Trans");
 	graphAll->SetLineColor(kBlue);
-	graphAll->SetFillColor(graphAll->GetLineColor() - 10);
+	graphAll->SetFillColor(graphAll->GetLineColor() - 9);
 	graphAll->SetMarkerStyle(kFullDotLarge);
 	graphAll->SetMarkerSize(dotSize);
 	graphAll->SetMarkerColor(graphAll->GetLineColor() +2);
@@ -175,20 +185,20 @@ int main (int argc, char** argv) {
 
 
 	graphAllMid->SetLineColor(kCyan);
-	graphAllMid->SetFillColor(graphAllMid->GetLineColor() - 10);
-	graphAllMid->SetMarkerStyle(kFullDotLarge);
+	graphAllMid->SetFillColor(graphAllMid->GetLineColor() - 9);
+	graphAllMid->SetMarkerStyle(kFullTriangleUp);
 	graphAllMid->SetMarkerSize(dotSize);
 	graphAllMid->SetMarkerColor(graphAllMid->GetLineColor() +2);
-	graphAllMid->SetTitle("All (100 Evt)");
+	graphAllMid->SetTitle("100 Events");
 	graphAllMax->SetLineColor(kGreen);
-	graphAllMax->SetFillColor(graphAllMax->GetLineColor() - 10);
-	graphAllMax->SetMarkerStyle(kFullDotLarge);
+	graphAllMax->SetFillColor(graphAllMax->GetLineColor() - 9);
+	graphAllMax->SetMarkerStyle(kFullTriangleDown);
 	graphAllMax->SetMarkerSize(dotSize);
 	graphAllMax->SetMarkerColor(graphAllMax->GetLineColor() +2);
-	graphAllMax->SetTitle("All (1000 Evt)");
+	graphAllMax->SetTitle("1000 Events");
 
 	TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
-	TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
+	TCanvas * c1 = new TCanvas("c1", "default", 0, 0, 800, 600);
 	
 	TMultiGraph * mg = new TMultiGraph();
 
@@ -198,13 +208,13 @@ int main (int argc, char** argv) {
 	mg->Add(graphConfMap);
 	
 	mg->Draw("AP");
-	mg->GetXaxis()->SetTitle("Grid Size (Number of Grid Points)/#");
-	mg->GetYaxis()->SetTitle("Computation Time per Event/s");
+	mg->GetXaxis()->SetTitle("Number of grid points/#");
+	mg->GetYaxis()->SetTitle("Time/ms");
 	mg->GetYaxis()->SetTitleOffset(1.4);
 	
 // 	gPad->SetLogy();
 	
-	TLegend * leg = c1->BuildLegend(0.1,0.75,0.35,0.9);
+	TLegend * leg = c1->BuildLegend(0.75,0.85,0.98,0.96);
 	leg->SetFillColor(kWhite);
 	// TPaveText * formulaLeg = new TPaveText(0.35,0.75,0.45,0.9,"blNDC");
 	// formulaLeg->AddText("#sum^{N}_{i} = x^{2}");
@@ -217,22 +227,27 @@ int main (int argc, char** argv) {
 	// ###################
 	// ### SECOND PART ###
 	// ###################
-	TCanvas * c2 = new TCanvas("c2","default2",300,10,800,600);
+	TCanvas * c2 = new TCanvas("c2","default2",300,0,800,600);
 	TMultiGraph * mgEvents = new TMultiGraph();
 	
+	graphAll->SetTitle("1 Event");
 	mgEvents->Add(graphAll);
 	mgEvents->Add(graphAllMid);
 	mgEvents->Add(graphAllMax);
 
 	mgEvents->Draw("AP");
-	// mgEvents->GetXaxis()->SetTitle("Grid Size (Number of Grid Points)/#");
-	// mgEvents->GetYaxis()->SetTitle("Time/s");
-	// mgEvents->GetYaxis()->SetTitleOffset(1.4);
 
-	TLegend * legEvents = c1->BuildLegend(0.1,0.75,0.35,0.9);
+	TLegend * legEvents = c2->BuildLegend(0.75,0.85,0.98,0.99);
 	legEvents->SetFillColor(kWhite);
+	c2->SetLogy();
+	mgEvents->GetXaxis()->SetTitle("Hough angle #alpha resolution");
+	// mgEvents->GetYaxis()->SetTitle("Computation Time per Event/ms");
+	mgEvents->GetYaxis()->SetTitle("Computation time/ms");
+	mgEvents->GetYaxis()->SetTitleOffset(1.3);
 	c2->Update();
 
+	c2->Print("ht_runtime_diff_events.pdf");
+	c1->Print("ht_runtime_diff_stages_of_chain.pdf");
 	theApp->Run();
 
 }

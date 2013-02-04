@@ -214,7 +214,7 @@ int main (int argc, char** argv) {
 	
 // 	gPad->SetLogy();
 	
-	TLegend * leg = c1->BuildLegend(0.7,0.8,0.95,0.95);
+	TLegend * leg = c1->BuildLegend(0.75,0.85,0.98,0.96);
 	leg->SetFillColor(kWhite);
 	// TPaveText * formulaLeg = new TPaveText(0.35,0.75,0.45,0.9,"blNDC");
 	// formulaLeg->AddText("#sum^{N}_{i} = x^{2}");
@@ -237,7 +237,7 @@ int main (int argc, char** argv) {
 
 	mgEvents->Draw("AP");
 
-	TLegend * legEvents = c2->BuildLegend(0.7,0.8,0.95,0.95);
+	TLegend * legEvents = c2->BuildLegend(0.75,0.85,0.98,0.99);
 	legEvents->SetFillColor(kWhite);
 	c2->SetLogy();
 	mgEvents->GetXaxis()->SetTitle("Hough angle #alpha resolution");

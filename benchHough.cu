@@ -1,3 +1,8 @@
+#ifdef USE_DOUBLES
+	typedef double TYPE;
+#else
+	typedef float TYPE;
+#endif
 #include <iostream>
 #include <fstream>
 #include "stdio.h"
@@ -39,9 +44,9 @@
  *
  * Uses just x, y and r at the moment, because that's all I need.
  */
-void readPoints(std::string filename, std::vector<double> &x, std::vector<double> &y, std::vector<double> &r, std::vector<int> &vI, int upToLineNumber = 2) {
+void readPoints(std::string filename, std::vector<TYPE> &x, std::vector<TYPE> &y, std::vector<TYPE> &r, std::vector<int> &vI, int upToLineNumber = 2) {
 	std::ifstream file(filename.c_str());
-	float tempX, tempY, tempZ, tempR, tempI;
+	TYPE tempX, tempY, tempZ, tempR, tempI;
 	char tempChar[10];
 	int i = 1;
 	if (!file.good() || file.fail()) std::cout << "Failed opening file!" << std::endl;
@@ -55,23 +60,36 @@ void readPoints(std::string filename, std::vector<double> &x, std::vector<double
 	file.close();
 }
 
+namespace my {
+	void printType(float object) {
+		std::cout << "I'm using floats!" << std::endl;
+	}
+	void printType(double object) {
+		std::cout << "I'm using doubles!" << std::endl;
+	}
+}
+
 int main (int argc, char** argv) {
 	int verbose = 1;
 	
 	//! fill original data
-	std::vector<double> x;
-	std::vector<double> y;
-	std::vector<double> r;
+	std::vector<TYPE> x;
+	std::vector<TYPE> y;
+	std::vector<TYPE> r;
 	std::vector<int> vI;
 	// readPoints("data.dat", x, y, r, 18);
 	readPoints("real_data.txt", x, y, r, vI, 10000);
 	
-	thrust::host_vector<double> h_x, h_xMid, h_xMax;
-	thrust::host_vector<double> h_y, h_yMid, h_yMax;
-	thrust::host_vector<double> h_r, h_rMid, h_rMax;
+	thrust::host_vector<TYPE> h_x, h_xMid, h_xMax;
+	thrust::host_vector<TYPE> h_y, h_yMid, h_yMax;
+	thrust::host_vector<TYPE> h_r, h_rMid, h_rMax;
 
 	//! Setting parameters
-	double maxAngle = 180*2;
+	TYPE maxAngle = 180*2;
+
+	if (verbose > 0) {
+		my::printType(x[0]);
+	}
 
 	// ##################
 	// ### FIRST PART ###
@@ -100,7 +118,11 @@ int main (int argc, char** argv) {
 		}
 	}
 
-	std::vector<double> timesConfMap, timesGenAngles, timesHoughTrans, timesAll, timesAllMid, timesAllMax;
+	if (verbose > 0) {
+		my::printType(h_x[0]);
+	}
+
+	std::vector<TYPE> timesConfMap, timesGenAngles, timesHoughTrans, timesAll, timesAllMid, timesAllMax;
 
 // int currentEvent = 0;
 // int nEvents = 10;
@@ -109,7 +131,7 @@ int main (int argc, char** argv) {
 // 		currentEvent++;
 // 	}
 // }
-	std::vector<double> vOfDegreeCellsizes;
+	std::vector<TYPE> vOfDegreeCellsizes;
 	// vOfDegreeCellsizes.push_back(60);
 	vOfDegreeCellsizes.push_back(30);
 	// vOfDegreeCellsizes.push_back(25);

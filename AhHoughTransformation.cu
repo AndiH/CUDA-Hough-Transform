@@ -3,7 +3,7 @@
 AhHoughTransformation::AhHoughTransformation()
 {}
 
-AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, double maxAngle, double everyXDegrees, bool doTiming)
+AhHoughTransformation::AhHoughTransformation(thrust::host_vector<TYPE> xValues, thrust::host_vector<TYPE> yValues, TYPE maxAngle, TYPE everyXDegrees, bool doTiming)
 : fXValues(xValues),
   fYValues(yValues),
   fMaxAngle(maxAngle),
@@ -14,7 +14,7 @@ AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues
 	DoEverything();
 }
 
-AhHoughTransformation::AhHoughTransformation(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, thrust::host_vector<double> rValues, double maxAngle, double everyXDegrees, bool doTiming)
+AhHoughTransformation::AhHoughTransformation(thrust::host_vector<TYPE> xValues, thrust::host_vector<TYPE> yValues, thrust::host_vector<TYPE> rValues, TYPE maxAngle, TYPE everyXDegrees, bool doTiming)
 : fXValues(xValues),
   fYValues(yValues),
   fRValues(rValues),
@@ -78,7 +78,7 @@ void AhHoughTransformation::DoConformalMapping() {
 	}
 }
 
-void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> &originalData, thrust::device_vector<double> &mappedData) {
+void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<TYPE> &originalData, thrust::device_vector<TYPE> &mappedData) {
 	thrust::transform(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
@@ -103,16 +103,17 @@ void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<double> 
 void AhHoughTransformation::DoGenerateAngles() {
 	fAngles.resize(fMaxAngle/fEveryXDegrees); //!< Resize angle vector to match the actual size
 	//! Fill angle vector with angles in appropriate stepping
+	TYPE zero = 0.;
 	thrust::sequence(
 		fAngles.begin(), 
 		fAngles.end(), 
-		0., 
+		zero, 
 		fEveryXDegrees
 	);
 }
 
 template <class T>
-void AhHoughTransformation::DoHoughTransformOnePoint(thrust::constant_iterator<T> data, thrust::device_vector<double> &d_tempData) {
+void AhHoughTransformation::DoHoughTransformOnePoint(thrust::constant_iterator<T> data, thrust::device_vector<TYPE> &d_tempData) {
 	thrust::transform(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
@@ -138,15 +139,15 @@ void AhHoughTransformation::DoHoughTransform() {
 	* This might be a point of huge improvements
 	*/
 	for (int iDataPoints = 0; iDataPoints < fXValues.size(); iDataPoints++) {
-		thrust::device_vector<double> d_tempData(fAngles.size()); //!< Temp vector which is being filled and then pushed back to the main return vector. For every angle point theres a data point, so that's the size of it
+		thrust::device_vector<TYPE> d_tempData(fAngles.size()); //!< Temp vector which is being filled and then pushed back to the main return vector. For every angle point theres a data point, so that's the size of it
 
 		if (false == fUseIsochrones) {
-			thrust::constant_iterator<thrust::tuple<double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints])); //!< create constant iterator for the conf mapped data 2-tuples
+			thrust::constant_iterator<thrust::tuple<TYPE, TYPE> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints])); //!< create constant iterator for the conf mapped data 2-tuples
 
 			//! following transformation uses the operator of htransf to run over all elements
 			//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the 	conf mapped 2-tuple
 			//!   the result of the calculation is written in to the d_tempData vector
-			DoHoughTransformOnePoint<thrust::tuple<double, double> >(currentData, d_tempData);
+			DoHoughTransformOnePoint<thrust::tuple<TYPE, TYPE> >(currentData, d_tempData);
 			// thrust::transform(
 			// 	thrust::make_zip_iterator(
 			// 		thrust::make_tuple(
@@ -164,11 +165,11 @@ void AhHoughTransformation::DoHoughTransform() {
 			// 	my::htransf()
 			// );
 		} else { // (true == fUseIsochrones)
-			thrust::constant_iterator<thrust::tuple<double, double, double> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
+			thrust::constant_iterator<thrust::tuple<TYPE, TYPE, TYPE> > currentData(thrust::make_tuple(fCXValues[iDataPoints], fCYValues[iDataPoints], fCRValues[iDataPoints]));
 			//! following transformation uses the operator of htransf to run over all elements
 			//!   elements being a iterator from angles.start to angles.end with each time the constant iterator with the 	conf mapped 2-tuple
 			//!   the result of the calculation is written in to the d_tempData vector
-			DoHoughTransformOnePoint<thrust::tuple<double, double, double> >(currentData, d_tempData);
+			DoHoughTransformOnePoint<thrust::tuple<TYPE, TYPE, TYPE> >(currentData, d_tempData);
 			// thrust::transform(
 			// 	thrust::make_zip_iterator(
 			// 		thrust::make_tuple(

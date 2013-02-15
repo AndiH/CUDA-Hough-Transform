@@ -1,6 +1,14 @@
 #ifndef AHHOUGHTRANSFORMATION_H
 #define AHHOUGHTRANSFORMATION_H
 
+// The following compiler flag will change the default usage of floats in this class to doubles
+// Use, e.g., as follows: g++ hough.cpp AhHoughTransformation.o -DUSE_DOUBLES=1 
+#ifdef USE_DOUBLES
+	typedef double TYPE;
+#else
+	typedef float TYPE;
+#endif
+
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
 #include <thrust/functional.h>
@@ -18,23 +26,23 @@ namespace my { // I don't know if this is a good idea are bad coding style
 	 * @return A tuple of doubles which have been conformal mapped
 	 */
 	struct confMap {
-		__device__ thrust::tuple<double, double> operator() (thrust::tuple<double, double> &data) {
-			double x = thrust::get<0>(data);
-			double y = thrust::get<1>(data);
+		__device__ thrust::tuple<TYPE, TYPE> operator() (thrust::tuple<TYPE, TYPE> &data) {
+			TYPE x = thrust::get<0>(data);
+			TYPE y = thrust::get<1>(data);
 			
-			double x2y2 = x*x+y*y;
+			TYPE x2y2 = x*x+y*y;
 		//	printf("x2y2 = %f\n", x2y2); // ### DEBUG
 			
 			return thrust::make_tuple(x/x2y2, -y/x2y2);
 		}
 
 		// Testing code for isochrones: 
-		__device__ double operator() (thrust::tuple<double&, double&, double&> &data) {
-			double value = thrust::get<0>(data);
-			double x = thrust::get<1>(data);
-			double y = thrust::get<2>(data);
+		__device__ TYPE operator() (thrust::tuple<TYPE&, TYPE&, TYPE&> &data) {
+			TYPE value = thrust::get<0>(data);
+			TYPE x = thrust::get<1>(data);
+			TYPE y = thrust::get<2>(data);
 
-			double x2y2 = x*x+y*y;
+			TYPE x2y2 = x*x+y*y;
 			
 			return value/x2y2;
 		}
@@ -55,7 +63,7 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		* This actual hough transforming method has been outsourced in order to call different hough transform functions from the operator mother function.
 		* So, if you want to change the way the hough transform is done, just implement another houghTransFunction function.
 		*/
-		__device__ double houghTransfFunction(double alpha, double x, double y) {
+		__device__ TYPE houghTransfFunction(TYPE alpha, TYPE x, TYPE y) {
 			return (cos(alpha*1.74532925199432955e-02) * x + sin(alpha*1.74532925199432955e-02) * y);
 		}
 
@@ -63,12 +71,12 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		* @param data A tuple of (an angle and a tuple of (to be hough transformed x and y coordinates))
 		* @return A hough transformed point corresponding to a certain angle
 		*/
-		__device__ double operator() (thrust::tuple<double &, thrust::tuple<double, double> > data) {
-			double alpha = thrust::get<0>(data);
-			thrust::tuple<double, double> xy = thrust::get<1>(data);
-			double x = thrust::get<0>(xy);	
+		__device__ TYPE operator() (thrust::tuple<TYPE &, thrust::tuple<TYPE, TYPE> > data) {
+			TYPE alpha = thrust::get<0>(data);
+			thrust::tuple<TYPE, TYPE> xy = thrust::get<1>(data);
+			TYPE x = thrust::get<0>(xy);	
 
-			double y = thrust::get<1>(xy);
+			TYPE y = thrust::get<1>(xy);
 
 	// 		printf("alpha * x + alpha * y = %f * %f + %f * %f\n", alpha, x, alpha, y);
 
@@ -76,12 +84,12 @@ namespace my { // I don't know if this is a good idea are bad coding style
 		}
 
 		// Testing code for isochrones:
-		__device__ double operator() (thrust::tuple<double &, thrust::tuple<double, double, double> > data) {
-			double alpha = thrust::get<0>(data);
-			thrust::tuple<double, double, double> xyr = thrust::get<1>(data);
-			double x = thrust::get<0>(xyr);
-			double y = thrust::get<1>(xyr);
-			double r = thrust::get<2>(xyr);
+		__device__ TYPE operator() (thrust::tuple<TYPE &, thrust::tuple<TYPE, TYPE, TYPE> > data) {
+			TYPE alpha = thrust::get<0>(data);
+			thrust::tuple<TYPE, TYPE, TYPE> xyr = thrust::get<1>(data);
+			TYPE x = thrust::get<0>(xyr);
+			TYPE y = thrust::get<1>(xyr);
+			TYPE r = thrust::get<2>(xyr);
 
 			return (houghTransfFunction(alpha, x, y) + r);
 		}
@@ -92,13 +100,13 @@ class AhHoughTransformation
 {
 public:
 	AhHoughTransformation();
-	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 180., double everyXDegrees = 30., bool doTiming = false);
-	AhHoughTransformation(thrust::host_vector<double>, thrust::host_vector<double>, thrust::host_vector<double>, double maxAngle = 360., double everyXDegrees = 30., bool doTiming = false);
+	AhHoughTransformation(thrust::host_vector<TYPE>, thrust::host_vector<TYPE>, TYPE maxAngle = 180., TYPE everyXDegrees = 30., bool doTiming = false);
+	AhHoughTransformation(thrust::host_vector<TYPE>, thrust::host_vector<TYPE>, thrust::host_vector<TYPE>, TYPE maxAngle = 360., TYPE everyXDegrees = 30., bool doTiming = false);
 	
 	virtual ~AhHoughTransformation();
 
-	thrust::device_vector<double> GetAngles() { return fAngles; };
-	std::vector<thrust::device_vector<double> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
+	thrust::device_vector<TYPE> GetAngles() { return fAngles; };
+	std::vector<thrust::device_vector<TYPE> > GetVectorOfTransformedPoints() {return fTransformedPoints; };
 
 	float GetTimeConfMap() { return fTimeConfMap; }; // in milli seconds
 	float GetTimeGenAngles() { return fTimeGenAngles; }; // in milli seconds
@@ -109,7 +117,7 @@ protected:
 	void DoConformalMapping();
 	void DoGenerateAngles();
 	template <class T>
-	void DoHoughTransformOnePoint(thrust::constant_iterator<T>, thrust::device_vector<double> &);
+	void DoHoughTransformOnePoint(thrust::constant_iterator<T>, thrust::device_vector<TYPE> &);
 	void DoHoughTransform();
 
 	void EventTiming_start();
@@ -117,18 +125,18 @@ protected:
 
 private:
 	// functions
-	void ConformalMapOneVector(thrust::device_vector<double> &, thrust::device_vector<double> &); // TODO: Are the & here really working?
+	void ConformalMapOneVector(thrust::device_vector<TYPE> &, thrust::device_vector<TYPE> &); // TODO: Are the & here really working?
 
 	// data containers
-	thrust::device_vector<double> fXValues, fCXValues;
-	thrust::device_vector<double> fYValues, fCYValues;
-	thrust::device_vector<double> fRValues, fCRValues;
-	thrust::device_vector<double> fAngles;
-	std::vector<thrust::device_vector<double> > fTransformedPoints;
+	thrust::device_vector<TYPE> fXValues, fCXValues;
+	thrust::device_vector<TYPE> fYValues, fCYValues;
+	thrust::device_vector<TYPE> fRValues, fCRValues;
+	thrust::device_vector<TYPE> fAngles;
+	std::vector<thrust::device_vector<TYPE> > fTransformedPoints;
 
 	// needed values
-	double fMaxAngle; // (right border of) range of the angles to investigate, [0, maxAngle]
-	double fEveryXDegrees; // make a data point every x degrees
+	TYPE fMaxAngle; // (right border of) range of the angles to investigate, [0, maxAngle]
+	TYPE fEveryXDegrees; // make a data point every x degrees
 
 	// switches
 	bool fUseIsochrones;

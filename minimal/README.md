@@ -10,5 +10,5 @@ Using the `-dlink` flag solves / circumvents this problem. But that's strange.
 ## Using this example
 The Makefile provides some example build configurations
 * `make good`: successfully builds with `-dlink` flag
-* `make bad`: fails building (no `-dlink' flag is set)
-* `make one`: alternatively build code as a one-liner (and let nvcc worry about everything) -- sucessfull!
+* `make bad`: fails building (no `-dlink` flag is set)
+* `make one`: alternatively build code as a one-liner (and let nvcc worry about everything) - sucessfull!

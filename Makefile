@@ -16,7 +16,7 @@ ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRin
 NVCCOPTIONS := -gencode arch=compute_35,code=sm_35 -g
 # NVCCOPTIONS := -arch=sm_20
 
-PATHTOCUSP = /private/herten/
+PATHTOCUSP = /private/herten/cusplibrary/
 
 OBJECTS = houghtransform.o AhTwoArraysToMatrix.o AhTranslatorFunction.o AhHoughTransformation.o
 
@@ -24,15 +24,15 @@ OBJECTS = houghtransform.o AhTwoArraysToMatrix.o AhTranslatorFunction.o AhHoughT
 all:	hough
 
 houghtransform.o:	houghtransform.cu
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dc houghtransform.cu
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c houghtransform.cu
 
 AhTwoArraysToMatrix.o:	AhTwoArraysToMatrix.cu AhTwoArraysToMatrix.h AhTranslatorFunction.h
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dc AhTwoArraysToMatrix.cu
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhTwoArraysToMatrix.cu
 AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dc AhHoughTransformation.cu
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhHoughTransformation.cu
 
 %.o:	%.cu %.h 
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dc $<
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c $<
 
 hough:	$(OBJECTS)
 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -o $@ $(OBJECTS) 

@@ -8,25 +8,31 @@
 #ifndef AHTRANSLATORFUNCTION_H_
 #define AHTRANSLATORFUNCTION_H_
 
+#ifdef USE_DOUBLES
+	typedef double TYPE;
+#else
+	typedef float TYPE;
+#endif
+
 #include <functional>
 
 class AhTranslatorFunction : public std::unary_function<int,int>  {
 public:
-	AhTranslatorFunction(double _inverseWidthOfCell, double _firstValue) : inverseWidthOfCell(_inverseWidthOfCell),
+	AhTranslatorFunction(TYPE _inverseWidthOfCell, TYPE _firstValue) : inverseWidthOfCell(_inverseWidthOfCell),
 	firstValue(_firstValue) {};
 	
 	// Overloaded operators, see each description
-	__device__ int operator() (const double &value) const { //< operator to translate from continuous double space into matrix suitable int space
+	__device__ int operator() (const TYPE &value) const { //< operator to translate from continuous double space into matrix suitable int space
 		return ((value - firstValue) * inverseWidthOfCell);
 	}
 	
-	__device__ double operator() (const int &value) const { //< opoerator to REtranslate ready-calculated integer matrix values into old-bordered double space
+	__device__ TYPE operator() (const int &value) const { //< opoerator to REtranslate ready-calculated integer matrix values into old-bordered double space
 		return ((value + firstValue) / inverseWidthOfCell);
 	}
 
 private:
-	double inverseWidthOfCell;
-	double firstValue;
+	TYPE inverseWidthOfCell;
+	TYPE firstValue;
 
 };
 #endif /* AHTRANSLATORFUNCTION_H_ */

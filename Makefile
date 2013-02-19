@@ -1,5 +1,6 @@
-# NVCCOPTIONS := -arch=sm_20
 NVCCOPTIONS := --gpu-architecture sm_20
+
+#NVCCOPTIONS += -DUSE_DOUBLES=1 # uncomment if you'd like to run with double precision
 
 ROOTCFLAGS := -I$(shell root-config --incdir)
 
@@ -14,11 +15,6 @@ all: hough
 
 houghtransform.o: houghtransform.cu
 	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -o $@ -c $<
-
-# AhTwoArraysToMatrix.o:	AhTwoArraysToMatrix.cu AhTwoArraysToMatrix.h AhTranslatorFunction.h
-# 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhTwoArraysToMatrix.cu
-# AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
-# 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -c AhHoughTransformation.cu
 
 %.o: %.cu %.h 
 	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -dlink -o $@ -c $<

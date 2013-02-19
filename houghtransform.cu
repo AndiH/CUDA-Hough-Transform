@@ -15,8 +15,6 @@
 #include <thrust/sequence.h>
 #include <thrust/extrema.h>
 
-#include "cuPrintf.cu"
-
 #include "TH2D.h"
 #include "TROOT.h"
 #include "TApplication.h"

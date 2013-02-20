@@ -19,7 +19,7 @@
 #include <thrust/sequence.h>
 #include <thrust/extrema.h>
 
-#include "cuPrintf.cu"
+//#include "cuPrintf.cu"
 
 #include "TROOT.h"
 #include "TApplication.h"

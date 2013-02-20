@@ -25,16 +25,16 @@ OBJECTS = benchHough.o AhHoughTransformation.o
 all:	benchHough
 
 benchHough.o:	benchHough.cu
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -dlink -c benchHough.cu
+	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -c benchHough.cu
 
 AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -c AhHoughTransformation.cu
+	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -c AhHoughTransformation.cu
 
 # %.o:	%.cu %.h 
 # 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -c $<
 
 benchHough:	$(OBJECTS)
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -o $@ $(OBJECTS) 
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) -o $@ $(OBJECTS) 
 
 clean:
 	rm -f *.o *~

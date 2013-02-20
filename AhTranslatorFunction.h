@@ -9,7 +9,7 @@
 #define AHTRANSLATORFUNCTION_H_
 
 #include <functional>
-#include "cuPrintf.cuh"
+//#include "cuPrintf.cuh"
 
 class AhTranslatorFunction : public std::unary_function<int,int>  {
 public:

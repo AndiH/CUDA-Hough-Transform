@@ -1,3 +1,11 @@
+// The following compiler flag will change the default usage of floats in this class to doubles
+// Use, e.g., as follows: g++ hough.cpp AhHoughTransformation.o -DUSE_DOUBLES=1 
+#ifdef USE_DOUBLES
+	typedef double TYPE;
+#else
+	typedef float TYPE;
+#endif
+
 #include <iostream>
 #include <fstream>
 #include <algorithm> // to find minimum --> min_element
@@ -15,8 +23,6 @@
 #include <thrust/sequence.h>
 #include <thrust/extrema.h>
 
-//#include "cuPrintf.cu"
-
 #include "TH2D.h"
 #include "TROOT.h"
 #include "TApplication.h"
@@ -29,6 +35,7 @@
 
 #include "AhTwoArraysToMatrix.h"
 #include "AhHoughTransformation.h"
+
 
 /**
  * @mainpage Conformal Mapping and Hough Transformation in CUDA Thrust
@@ -59,7 +66,7 @@
  *
  * Uses just x, y and r at the moment, because that's all I need.
  */
-void readPoints(std::string filename, std::vector<double> &x, std::vector<double> &y, std::vector<double> &r, int upToLineNumber = 2) {
+void readPoints(std::string filename, std::vector<TYPE> &x, std::vector<TYPE> &y, std::vector<TYPE> &r, int upToLineNumber = 2) {
 	std::ifstream file(filename.c_str());
 	float tempX, tempY, tempZ, tempR, tempI;
 	char tempChar[10];
@@ -79,7 +86,7 @@ void readPoints(std::string filename, std::vector<double> &x, std::vector<double
  * @param thatTuple A tuple of doubles to be printed
  * @return Nothing, it's a void.
  */
-void printTuple (thrust::tuple<double, double> thatTuple) {
+void printTuple (thrust::tuple<TYPE, TYPE> thatTuple) {
 	std::cout << thrust::get<0>(thatTuple) << " - " << thrust::get<1>(thatTuple);
 }
 
@@ -112,23 +119,23 @@ int main (int argc, char** argv) {
 	int verbose = 1;
 	
 	//! fill original data
-	std::vector<double> x;
-	std::vector<double> y;
-	std::vector<double> r;
+	std::vector<TYPE> x;
+	std::vector<TYPE> y;
+	std::vector<TYPE> r;
 	// readPoints("data.dat", x, y, r, 18);
 	readPoints("real_data.txt", x, y, r, 18);
 
 	//! Change container from std::vector to thrust::host_vector
-	thrust::host_vector<double> h_x = x;
-	thrust::host_vector<double> h_y = y;
-	thrust::host_vector<double> h_r = r;
+	thrust::host_vector<TYPE> h_x = x;
+	thrust::host_vector<TYPE> h_y = y;
+	thrust::host_vector<TYPE> h_r = r;
 	
 	TStopwatch myWatch;
 
 	//! Setting parameters
-	double maxAngle = 180; //!< Hough transform ranges from 0 deg to 180 deg
-	double everyXDegrees = 30; //!< make a point every X degrees of alpha; default = 30
-	if (argc > 1) everyXDegrees = (double)atof(argv[1]); //!< overwrite default value to what was given by command line
+	TYPE maxAngle = 180; //!< Hough transform ranges from 0 deg to 180 deg
+	TYPE everyXDegrees = 30; //!< make a point every X degrees of alpha; default = 30
+	if (argc > 1) everyXDegrees = (TYPE)atof(argv[1]); //!< overwrite default value to what was given by command line
 
 	//! Simple (x,y) coordinates
 	AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, maxAngle, everyXDegrees, true);
@@ -137,8 +144,8 @@ int main (int argc, char** argv) {
 	// maxAngle *= 2; //!< for isochrones, hough transformation goes from 0 to 360
 	// AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, everyXDegrees, true);
 
-	thrust::device_vector<double> alphas = houghTrans->GetAngles();
-	std::vector<thrust::device_vector<double> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
+	thrust::device_vector<TYPE> alphas = houghTrans->GetAngles();
+	std::vector<thrust::device_vector<TYPE> > transformedPoints = houghTrans->GetVectorOfTransformedPoints();
 
 	// std::cout << "It took " << houghTrans->GetTimeHoughTransform()/1000 << "s for actual HT." << std::endl;
 
@@ -147,23 +154,23 @@ int main (int argc, char** argv) {
 	 */
 	//! Find upper and lower borders of histograms
 	int nBinsX = (int) maxAngle/everyXDegrees;
-	double minValueX = 0;
-	double maxValueX = maxAngle;
+	TYPE minValueX = 0;
+	TYPE maxValueX = maxAngle;
 	if (verbose > 0) std::cout << "nBinsX = " << nBinsX << ", minValueX = " << minValueX << ", maxValueX = " << maxValueX << std::endl;
 
 	int nBinsY = maxAngle/everyXDegrees;
-	// double minValueY = -0.4;
-	// double maxValueY = 0.7;
+	// TYPE minValueY = -0.4;
+	// TYPE maxValueY = 0.7;
 	// if (verbose > 0) std::cout << "nBinsY = " << nBinsY << ", minValueY = " << minValueY << ", maxValueY " << maxValueY << std::endl;
 	//! Automatically get y borders
 	std::cout << transformedPoints.size() << std::endl;
-	double minValueY = transformedPoints[0][0];
-	double maxValueY = transformedPoints[0][0];
+	TYPE minValueY = transformedPoints[0][0];
+	TYPE maxValueY = transformedPoints[0][0];
 	std::cout << "minValueY = " << minValueY << ", maxValueY = " << maxValueY << std::endl;
 	for (int i = 0; i < transformedPoints.size(); i++) {
-		thrust::device_vector<double> tempD(transformedPoints[i]);
-		double minimum = *(thrust::min_element(tempD.begin(), tempD.end()));
-		double maximum = *(thrust::max_element(tempD.begin(), tempD.end()));
+		thrust::device_vector<TYPE> tempD(transformedPoints[i]);
+		TYPE minimum = *(thrust::min_element(tempD.begin(), tempD.end()));
+		TYPE maximum = *(thrust::max_element(tempD.begin(), tempD.end()));
 		if (minimum < minValueY) minValueY = minimum;
 		if (maximum > maxValueY) maxValueY = maximum;
 		std::cout << "minimum = " << minimum << ", maximum = " << maximum << std::endl;
@@ -174,11 +181,11 @@ int main (int argc, char** argv) {
 	
 	//! Create matrices
 	std::vector<TH2D*> theHistograms;
-	std::vector< cusp::coo_matrix<int, double, cusp::device_memory> > theMatrices;
+	std::vector< cusp::coo_matrix<int, TYPE, cusp::device_memory> > theMatrices;
 	std::vector<AhTwoArraysToMatrix> theObjects;
 	for (int i = 0; i < transformedPoints.size(); i++) {
 		AhTwoArraysToMatrix tempObject(
-			thrust::device_vector<double> (alphas), thrust::device_vector<double> (transformedPoints[i]),
+			thrust::device_vector<TYPE> (alphas), thrust::device_vector<TYPE> (transformedPoints[i]),
 			nBinsX,
 			minValueX,
 			maxValueX,

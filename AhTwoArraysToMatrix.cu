@@ -16,7 +16,7 @@
 AhTwoArraysToMatrix::AhTwoArraysToMatrix()
 {}
 
-AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<double> xValues, thrust::host_vector<double> yValues, int nbinsx, double xlow, double xup, int nbinsy, double ylow, double yup, bool doTiming, bool doBoundaryCheck)
+AhTwoArraysToMatrix::AhTwoArraysToMatrix(thrust::host_vector<TYPE> xValues, thrust::host_vector<TYPE> yValues, int nbinsx, TYPE xlow, TYPE xup, int nbinsy, TYPE ylow, TYPE yup, bool doTiming, bool doBoundaryCheck)
 : fXValues(xValues),
   fYValues(yValues),
   fNBinsX(nbinsx),
@@ -52,10 +52,10 @@ AhTwoArraysToMatrix::~AhTwoArraysToMatrix()
 bool AhTwoArraysToMatrix::DoBoundaryCheck() {
 	bool everythingIsOk = true;
 
-	double minimumX = *(thrust::min_element(fXValues.begin(), fXValues.end()));
-	double maximumX = *(thrust::max_element(fXValues.begin(), fXValues.end()));
-	double minimumY = *(thrust::min_element(fYValues.begin(), fYValues.end()));
-	double maximumY = *(thrust::max_element(fYValues.begin(), fYValues.end()));
+	TYPE minimumX = *(thrust::min_element(fXValues.begin(), fXValues.end()));
+	TYPE maximumX = *(thrust::max_element(fXValues.begin(), fXValues.end()));
+	TYPE minimumY = *(thrust::min_element(fYValues.begin(), fYValues.end()));
+	TYPE maximumY = *(thrust::max_element(fYValues.begin(), fYValues.end()));
 
 	if (minimumX < fXlow || maximumX > fXup || minimumY < fYlow || maximumY > fYup) {
 		std::cout << "Values are out of boundaries! Breaking!" << std::endl;
@@ -98,7 +98,7 @@ void AhTwoArraysToMatrix::DoTranslations()
 // 	}
 }
 
-thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinates (const thrust::device_vector<double> &values, double inverseStepWidth, double lowValue) {
+thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinates (const thrust::device_vector<TYPE> &values, TYPE inverseStepWidth, TYPE lowValue) {
 	thrust::device_vector<int> tempVec(values.size());
 
 	thrust::transform(values.begin(), values.end(), tempVec.begin(), AhTranslatorFunction(inverseStepWidth, lowValue));
@@ -106,8 +106,8 @@ thrust::device_vector<int> AhTwoArraysToMatrix::TranslateValuesToMatrixCoordinat
 	return tempVec;
 }
 
-thrust::device_vector<double> AhTwoArraysToMatrix::RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, double inverseStepWidth, double lowValue) {
-	thrust::device_vector<double> tempVec(values.size());
+thrust::device_vector<TYPE> AhTwoArraysToMatrix::RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, TYPE inverseStepWidth, TYPE lowValue) {
+	thrust::device_vector<TYPE> tempVec(values.size());
 	
 	thrust::transform(values.begin(), values.end(), tempVec.begin(), AhTranslatorFunction(inverseStepWidth, lowValue)); // uses operator for INTs (which is the retranslation operator)
 	
@@ -121,7 +121,7 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	// allocate storage for unordered triplets
 	cusp::array1d<int, cusp::device_memory> I(fTranslatedXValues.begin(), fTranslatedXValues.end());  // row indices
 	cusp::array1d<int, cusp::device_memory> J(fTranslatedYValues.begin(), fTranslatedYValues.end());  // column indices
-	cusp::array1d<double, cusp::device_memory> V(weightVector.begin(), weightVector.end());  // values
+	cusp::array1d<TYPE, cusp::device_memory> V(weightVector.begin(), weightVector.end());  // values
 	
 	if (true == fDoTiming) {
 		fSwHistSort = new TStopwatch(); // old
@@ -192,7 +192,7 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 	) + 1;
 	
 	// allocate output matrix
-	cusp::coo_matrix<int, double, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
+	cusp::coo_matrix<int, TYPE, cusp::device_memory> A(fNBinsX, fNBinsY, num_entries);
 	
 	if (true == fDoTiming) {
 		fSwHistSum = new TStopwatch(); // old
@@ -225,7 +225,7 @@ void AhTwoArraysToMatrix::CalculateHistogram()
 		), // TODO: maybe it makes sense to put a tuple of vectors in here? investigate for performance
 		A.values.begin(), // TODO: maybe it makes sense to put a plain vector in here? then combine this one and the tuple from the line above into a matrix
 		thrust::equal_to< thrust::tuple<int,int> >(), 
-		thrust::plus<double>()
+		thrust::plus<TYPE>()
 	);
 	if (true == fDoTiming) {
 		fSwHistSum->Stop(); // old
@@ -287,9 +287,9 @@ TH2D * AhTwoArraysToMatrix::GetHistogram()
  * 
  * Example access: thrust::get<0>(this->GetPlainMatrixValues()[0])
  */
-thrust::device_vector<thrust::tuple<int, int, double> > AhTwoArraysToMatrix::GetPlainMatrixValues()
+thrust::device_vector<thrust::tuple<int, int, TYPE> > AhTwoArraysToMatrix::GetPlainMatrixValues()
 {
-	thrust::device_vector< thrust::tuple<int, int, double> > allStuff(
+	thrust::device_vector< thrust::tuple<int, int, TYPE> > allStuff(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
 				fCUSPMatrix.row_indices.begin(), 
@@ -314,7 +314,7 @@ void AhTwoArraysToMatrix::DoRetranslations()
 	fRetranslatedYValues = RetranslateValuesFromMatrixCoordinates(CuspVectorToDeviceVector(fCUSPMatrix.column_indices), 1/fYStepWidth, fYlow);
 }
 
-thrust::device_vector<thrust::tuple<double, double, double> > AhTwoArraysToMatrix::GetRetranslatedMatrixValues()
+thrust::device_vector<thrust::tuple<TYPE, TYPE, TYPE> > AhTwoArraysToMatrix::GetRetranslatedMatrixValues()
 {
 	// First off, translate I and J from matrix int space into real double space
 	if (false == fReTranslationHasBeenDone) {
@@ -323,7 +323,7 @@ thrust::device_vector<thrust::tuple<double, double, double> > AhTwoArraysToMatri
 	}
 	
 	// make dev vec tuple construct
-	thrust::device_vector< thrust::tuple<double, double, double> > allStuff(
+	thrust::device_vector< thrust::tuple<TYPE, TYPE, TYPE> > allStuff(
 		thrust::make_zip_iterator(
 			thrust::make_tuple(
 				fRetranslatedXValues.begin(), 
@@ -359,7 +359,7 @@ thrust::device_vector<int> AhTwoArraysToMatrix::GetPlainYValues()
 	return CuspVectorToDeviceVector<int>(fI);
 }
 
-thrust::device_vector<double> AhTwoArraysToMatrix::GetMultiplicities()
+thrust::device_vector<TYPE> AhTwoArraysToMatrix::GetMultiplicities()
 {
-	return CuspVectorToDeviceVector<double>(fV);
+	return CuspVectorToDeviceVector<TYPE>(fV);
 }

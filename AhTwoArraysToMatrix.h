@@ -1,6 +1,12 @@
 #ifndef TWOARRAYSTOMATRIX_H
 #define TWOARRAYSTOMATRIX_H
 
+#ifdef USE_DOUBLES
+	typedef double TYPE;
+#else
+	typedef float TYPE;
+#endif
+
 #include <cusp/coo_matrix.h>
 #include <cusp/print.h>
 
@@ -23,48 +29,48 @@ class AhTwoArraysToMatrix
 {
 public:
 	AhTwoArraysToMatrix();
-	AhTwoArraysToMatrix(thrust::host_vector<double>, thrust::host_vector<double>, int, double, double, int, double, double, bool doTiming = false, bool doBoundaryCheck = false);
+	AhTwoArraysToMatrix(thrust::host_vector<TYPE>, thrust::host_vector<TYPE>, int, TYPE, TYPE, int, TYPE, TYPE, bool doTiming = false, bool doBoundaryCheck = false);
 	
 	virtual ~AhTwoArraysToMatrix();
 	
-	void SetXValues(thrust::host_vector<double> _xvalues) { fXValues = _xvalues; };
-	void SetYValues(thrust::host_vector<double> _yvalues) { fYValues = _yvalues; };
+	void SetXValues(thrust::host_vector<TYPE> _xvalues) { fXValues = _xvalues; };
+	void SetYValues(thrust::host_vector<TYPE> _yvalues) { fYValues = _yvalues; };
 	void SetNBinsX(int _nbinsx) { fNBinsX = _nbinsx; };
 	void SetNBinsY(int _nbinsy) { fNBinsY = _nbinsy; };
-	void SetXlow(double _xlow) { fXlow = _xlow; };
-	void SetXup(double _xup) { fXup = _xup; };
-	void SetYlow(double _ylow) { fYlow = _ylow; };
-	void SetYup(double _yup) { fYup = _yup; };
+	void SetXlow(TYPE _xlow) { fXlow = _xlow; };
+	void SetXup(TYPE _xup) { fXup = _xup; };
+	void SetYlow(TYPE _ylow) { fYlow = _ylow; };
+	void SetYup(TYPE _yup) { fYup = _yup; };
 	
-	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (const thrust::device_vector<double>&, double, double);
-	thrust::device_vector<double> RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, double inverseStepWidth, double lowValue);
+	thrust::device_vector<int> TranslateValuesToMatrixCoordinates (const thrust::device_vector<TYPE>&, TYPE, TYPE);
+	thrust::device_vector<TYPE> RetranslateValuesFromMatrixCoordinates (const thrust::device_vector<int> &values, TYPE inverseStepWidth, TYPE lowValue);
 	
  	bool DoBoundaryCheck();
  	void DoTranslations();
 	void DoRetranslations();
  	void CalculateHistogram();
 	
-	cusp::coo_matrix<int, double, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}
+	cusp::coo_matrix<int, TYPE, cusp::device_memory> GetCUSPMatrix() {return fCUSPMatrix;}
 	TMatrixD GetTMatrixD();
 	TH2D * GetHistogram();
 	int GetNBinsX() { return fNBinsX; };
 	int GetNBinsY() { return fNBinsY; };
-	double GetXlow() { return fXlow; };
-	double GetXup() { return fXup; };
-	double GetYlow() { return fYlow; };
-	double GetYup() { return fYup; };
+	TYPE GetXlow() { return fXlow; };
+	TYPE GetXup() { return fXup; };
+	TYPE GetYlow() { return fYlow; };
+	TYPE GetYup() { return fYup; };
 	thrust::device_vector<int> GetPlainXValues();
 	thrust::device_vector<int> GetPlainYValues();
-	thrust::device_vector<double> GetMultiplicities();
-	thrust::device_vector<double> GetBinContent() { return GetMultiplicities(); };
-	thrust::device_vector<thrust::tuple<int, int, double> > GetPlainMatrixValues();
-	thrust::device_vector<thrust::tuple<double, double, double> > GetRetranslatedMatrixValues();
+	thrust::device_vector<TYPE> GetMultiplicities();
+	thrust::device_vector<TYPE> GetBinContent() { return GetMultiplicities(); };
+	thrust::device_vector<thrust::tuple<int, int, TYPE> > GetPlainMatrixValues();
+	thrust::device_vector<thrust::tuple<TYPE, TYPE, TYPE> > GetRetranslatedMatrixValues();
 
-	double GetTimeTranslateValues() { return fTimeTranslateValues; }; // in MILLI seconds, see http://developer.download.nvidia.com/compute/cuda/4_2/rel/toolkit/docs/online/group__CUDART__EVENT_g14c387cc57ce2e328f6669854e6020a5.html
-	double GetTimeHistSort() { return fTimeHistSort; }; // in MILLI seconds
-	double GetTimeHistSum() { return fTimeHistSum; }; // in MILLI seconds
-	double GetTimeCreateTMatrixD() { return fSwCreateTMatrixD->CpuTime(); }; // in SECONDS
-	double GetTimeCreateTH2D() { return fSwCreateTH2D->CpuTime(); }; // in SECONDS
+	TYPE GetTimeTranslateValues() { return fTimeTranslateValues; }; // in MILLI seconds, see http://developer.download.nvidia.com/compute/cuda/4_2/rel/toolkit/docs/online/group__CUDART__EVENT_g14c387cc57ce2e328f6669854e6020a5.html
+	TYPE GetTimeHistSort() { return fTimeHistSort; }; // in MILLI seconds
+	TYPE GetTimeHistSum() { return fTimeHistSum; }; // in MILLI seconds
+	TYPE GetTimeCreateTMatrixD() { return fSwCreateTMatrixD->CpuTime(); }; // in SECONDS
+	TYPE GetTimeCreateTH2D() { return fSwCreateTH2D->CpuTime(); }; // in SECONDS
 
 protected:
 	// Not used, just kept here for ... well... I don't know for what
@@ -79,22 +85,22 @@ private:
 	thrust::device_vector<T> CuspVectorToDeviceVector(const cusp::array1d<T, cusp::device_memory> &cuspvec);
 	
 	bool fDoTiming;
-	thrust::device_vector<double> fXValues;
-	thrust::device_vector<double> fYValues;
+	thrust::device_vector<TYPE> fXValues;
+	thrust::device_vector<TYPE> fYValues;
 	thrust::device_vector<int> fTranslatedXValues;
 	thrust::device_vector<int> fTranslatedYValues;
-	thrust::device_vector<double> fRetranslatedXValues;
-	thrust::device_vector<double> fRetranslatedYValues;
+	thrust::device_vector<TYPE> fRetranslatedXValues;
+	thrust::device_vector<TYPE> fRetranslatedYValues;
 	int fNBinsX;
 	int fNBinsY;
-	double fXlow;
-	double fXup;
-	double fYlow;
-	double fYup;
-	cusp::coo_matrix<int, double, cusp::device_memory> fCUSPMatrix;
+	TYPE fXlow;
+	TYPE fXup;
+	TYPE fYlow;
+	TYPE fYup;
+	cusp::coo_matrix<int, TYPE, cusp::device_memory> fCUSPMatrix;
 	
-	double fXStepWidth;
-	double fYStepWidth;
+	TYPE fXStepWidth;
+	TYPE fYStepWidth;
 	
 	bool fReTranslationHasBeenDone;
 	
@@ -112,7 +118,7 @@ private:
 	
 	cusp::array1d<int, cusp::device_memory> fI;
 	cusp::array1d<int, cusp::device_memory> fJ;
-	cusp::array1d<double, cusp::device_memory> fV;
+	cusp::array1d<TYPE, cusp::device_memory> fV;
 };
 
 #endif //TWOARRAYSTOMATRIX_H

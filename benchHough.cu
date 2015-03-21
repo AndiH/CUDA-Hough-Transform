@@ -19,7 +19,7 @@
 #include <thrust/sequence.h>
 #include <thrust/extrema.h>
 
-#include "cuPrintf.cu"
+//#include "cuPrintf.cu"
 
 #include "TROOT.h"
 #include "TApplication.h"
@@ -220,7 +220,7 @@ int main (int argc, char** argv) {
 	graphAllMax->SetMarkerColor(graphAllMax->GetLineColor() +2);
 	graphAllMax->SetTitle("1000 Events");
 
-	TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
+	// TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
 	TCanvas * c1 = new TCanvas("c1", "default", 0, 0, 800, 600);
 	
 	TMultiGraph * mg = new TMultiGraph();
@@ -271,6 +271,6 @@ int main (int argc, char** argv) {
 
 	c2->Print("ht_runtime_diff_events.pdf");
 	c1->Print("ht_runtime_diff_stages_of_chain.pdf");
-	theApp->Run();
+	// theApp->Run();
 
 }

@@ -7,7 +7,7 @@
 # GLIBS  += -lMinuit
 
 ROOTCFLAGS := -I$(shell root-config --incdir)
-ROOTCFLAGS += -m64
+# ROOTCFLAGS += -m64
 
 ROOTLIBS := -L$(shell root-config --libdir)
 ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lm -ldl -lMinuit -lGui
@@ -25,7 +25,7 @@ OBJECTS = benchHough.o AhHoughTransformation.o
 all:	benchHough
 
 benchHough.o:	benchHough.cu
-	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -c benchHough.cu
+	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -dlink -c benchHough.cu
 
 AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
 	nvcc $(NVCCOPTIONS) $(ROOTCFLAGS) -c AhHoughTransformation.cu

@@ -142,6 +142,7 @@ int main (int argc, char** argv) {
 	vOfDegreeCellsizes.push_back(2);
 	vOfDegreeCellsizes.push_back(1);
 	vOfDegreeCellsizes.push_back(0.5);
+	vOfDegreeCellsizes.push_back(0.01);
 	for (int i = 0; i < vOfDegreeCellsizes.size(); ++i) {
 		AhHoughTransformation * houghTrans = new AhHoughTransformation(h_x, h_y, h_r, maxAngle, vOfDegreeCellsizes[i], true);
 		AhHoughTransformation * houghTransMid = new AhHoughTransformation(h_xMid, h_yMid, h_rMid, maxAngle, vOfDegreeCellsizes[i], true);

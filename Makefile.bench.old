@@ -34,7 +34,10 @@ AhHoughTransformation.o: AhHoughTransformation.cu AhHoughTransformation.h
 # 	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -c $<
 
 benchHough:	$(OBJECTS)
-	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -o $@ $(OBJECTS) 
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -o $@ $(OBJECTS)
+
+one: Makefile
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP)  -o $@ benchHough.cu AhHoughTransformation.cu
 
 clean:
-	rm -f *.o *~
+	rm -f *.o *~ benchHough

@@ -29,6 +29,7 @@
 #include "TMatrixD.h"
 #include "TCanvas.h"
 #include "TStopwatch.h"
+#include "TStyle.h"
 
 #include <cusp/coo_matrix.h>
 #include <cusp/print.h>
@@ -116,6 +117,7 @@ TH2D * addVectorOfPToHistograms (std::vector<TH2D* > vHistograms) {
 }
 
 int main (int argc, char** argv) {
+	gStyle->SetOptStat(0);
 	int verbose = 1;
 	
 	//! fill original data
@@ -123,7 +125,12 @@ int main (int argc, char** argv) {
 	std::vector<TYPE> y;
 	std::vector<TYPE> r;
 	// readPoints("data.dat", x, y, r, 18);
-	readPoints("real_data.txt", x, y, r, 18);
+
+	std::string inputFileName = "real_data.txt";
+	int readInUpToLineNumber = 20;
+	if (argc > 2) readInUpToLineNumber = static_cast<int>(atof(argv[2]));
+	if (argc > 3) inputFileName = argv[3];
+	readPoints(inputFileName, x, y, r, readInUpToLineNumber);
 
 	//! Change container from std::vector to thrust::host_vector
 	thrust::host_vector<TYPE> h_x = x;
@@ -247,8 +254,8 @@ int main (int argc, char** argv) {
 	if (doRoot) {
 
 		TH2D * thatHist = addVectorOfPToHistograms(theHistograms);
-		thatHist->GetXaxis()->SetTitle("Angle / #circ");
-		thatHist->GetYaxis()->SetTitle("Hough transformed");
+		thatHist->GetXaxis()->SetTitle("#alpha / #circ");
+		thatHist->GetYaxis()->SetTitle("r / cm");
 	
 //		for (int i = 0; i < transformedPoints.size(); i++) {
 //			for (int j = 0; j < transformedPoints[i].size(); j++) {
@@ -258,7 +265,7 @@ int main (int argc, char** argv) {
 		
 		TApplication *theApp = new TApplication("app", &argc, argv, 0, -1);
 		TCanvas * c1 = new TCanvas("c1", "default", 100, 10, 800, 600);
-	
+		
 		thatHist->Draw("COLZ");
 		c1->Update();
 		theApp->Run();

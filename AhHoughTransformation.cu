@@ -97,7 +97,7 @@ void AhHoughTransformation::ConformalMapOneVector(thrust::device_vector<TYPE> &o
 		mappedData.begin(),
 		my::confMap()
 	);
-	std::cout << "--DEBUG-- AhHoughTransformation::ConformalMapOneVector ### Been here!" << std::endl;
+	// std::cout << "--DEBUG-- AhHoughTransformation::ConformalMapOneVector ### Been here!" << std::endl;
 }
 
 void AhHoughTransformation::DoGenerateAngles() {

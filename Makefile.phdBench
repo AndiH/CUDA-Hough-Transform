@@ -1,0 +1,31 @@
+# # ROOTLIBS := $(shell root-config --libs)
+# # ROOTCFLAGS := $(shell root-config --cflags)
+# # ROOTLIBS += lMinuit # Not included by default
+# CFLAGS = $(shell root-config --cflags)
+# LIBS   = $(shell root-config --libs)
+# GLIBS  = $(shell root-config --glibs)
+# GLIBS  += -lMinuit
+
+ROOTCFLAGS := -I$(shell root-config --incdir)
+# ROOTCFLAGS += -m64
+
+ROOTLIBS := -L$(shell root-config --libdir)
+ROOTLIBS += -lCore -lCint -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -lRint -lPostscript -lMatrix -lPhysics -lMathCore -lThread -lm -ldl -lMinuit -lGui
+
+# NVCCOPTIONS := -gencode arch=compute_10,code=sm_10 -gencode arch=compute_20,code=sm_20 -gencode arch=compute_30,code=sm_30 -gencode arch=compute_35,code=sm_35
+# NVCCOPTIONS := -gencode arch=compute_35,code=sm_35 -g
+NVCCOPTIONS := -arch=sm_30
+# NVCCOPTIONS += -DUSE_DOUBLES=1 ### FLAG TO ENABLE USAGE OF DOUBLES
+
+PATHTOCUSP = /Applications/Panda/CUDA
+
+# OBJECTS = benchHough.o AhHoughTransformation.o
+
+
+all:	phdBench
+
+phdBench:
+	nvcc $(NVCCOPTIONS) $(ROOTLIBS) $(ROOTCFLAGS) -I$(PATHTOCUSP) -o $@ newBench.cu AhHoughTransformation.cu
+
+clean:
+	rm -f *.o *~ phdBench
